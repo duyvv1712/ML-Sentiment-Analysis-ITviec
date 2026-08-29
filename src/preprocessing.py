@@ -1,10 +1,7 @@
 import re
 import os
 import unicodedata
-import pandas as pd
-import numpy as np
-from typing import List, Dict, Set, Tuple
-from underthesea import word_tokenize
+from typing import Dict, Set
 
 class TextPreprocessor:
     """
@@ -21,6 +18,7 @@ class TextPreprocessor:
         self.wrong_words_dict = self._load_dict_from_file(os.path.join(dict_dir, 'wrong-word.txt'))
         self.english_vnmese_dict = self._load_dict_from_file(os.path.join(dict_dir, 'english-vnmese.txt'))
         self.emoji_dict = self._load_dict_from_file(os.path.join(dict_dir, 'emojicon.txt'))
+        self.emoji_dict = dict(sorted(self.emoji_dict.items(), key=lambda x: len(x[0]), reverse=True))
         
         # Load lexicon cảm xúc
         self.positive_words = self._load_set_from_file(os.path.join(dict_dir, 'positive_words.txt'))
@@ -32,7 +30,11 @@ class TextPreprocessor:
         if not os.path.exists(filepath):
             return set()
         with open(filepath, 'r', encoding='utf-8') as f:
-            return {line.strip().lower() for line in f if line.strip()}
+            return {
+                line.strip().lower()
+                for line in f
+                if line.strip() and not line.strip().startswith('#')
+            }
 
     def _load_dict_from_file(self, filepath: str) -> Dict[str, str]:
         if not os.path.exists(filepath):
@@ -40,13 +42,12 @@ class TextPreprocessor:
         result = {}
         with open(filepath, 'r', encoding='utf-8') as f:
             for line in f:
-                parts = line.strip().split('\t')
+                line_clean = line.strip()
+                if not line_clean or line_clean.startswith('#'):
+                    continue
+                parts = line_clean.split('\t') if '\t' in line_clean else line_clean.split(' ', 1)
                 if len(parts) >= 2:
                     result[parts[0].lower()] = parts[1].lower()
-                elif len(parts) == 1 and ' ' in line:
-                    subparts = line.strip().split(' ', 1)
-                    if len(subparts) == 2:
-                        result[subparts[0].lower()] = subparts[1].lower()
         return result
 
     def normalize_unicode(self, text: str) -> str:
@@ -58,7 +59,10 @@ class TextPreprocessor:
     def process_emojis(self, text: str) -> str:
         """Thay thế emoji/emojicon bằng từ ngữ mang sắc thái cảm xúc."""
         for emo, replacement in self.emoji_dict.items():
-            text = text.replace(emo, f" {replacement} ")
+            if any(c.isalpha() for c in emo):
+                text = re.sub(re.escape(emo), f" {replacement} ", text, flags=re.IGNORECASE)
+            else:
+                text = text.replace(emo, f" {replacement} ")
         for emo in self.positive_emojis:
             text = text.replace(emo, " tích_cực ")
         for emo in self.negative_emojis:
@@ -114,20 +118,31 @@ class TextPreprocessor:
     def clean_advance_text(self, text: str, remove_stopwords: bool = True) -> str:
         """
         Bước 2: Làm sạch nâng cao (Clean Advance Text)
-        - Thực hiện tách từ tiếng Việt (Word Segmentation) bằng underthesea
+        - Thực hiện tách từ tiếng Việt (Word Segmentation)
+          Ưu tiên: underthesea → pyvi (fallback nếu underthesea không load được)
         - Loại bỏ từ dừng (Stopwords) nếu yêu cầu
         """
         basic = self.clean_basic_text(text)
         if not basic:
             return ""
-        
-        tokenized = word_tokenize(basic, format="text")
-        
+
+        # Lazy-load tokenizer: thử underthesea trước, fallback pyvi
+        tokenized = basic  # default: không tách từ
+        try:
+            from underthesea import word_tokenize as _wt
+            tokenized = _wt(basic, format="text")
+        except Exception:
+            try:
+                from pyvi import ViTokenizer
+                tokenized = ViTokenizer.tokenize(basic)
+            except Exception:
+                tokenized = basic  # fallback cuối: giữ nguyên
+
         if remove_stopwords:
             words = tokenized.split()
             words = [w for w in words if w not in self.stopwords]
             return " ".join(words)
-        
+
         return tokenized
 
     def calc_sentiment_features(self, text: str) -> Dict[str, float]:

@@ -1,15 +1,14 @@
-# Đồ Án Cuối Môn NLP: Phân Tích Cảm Xúc (Sentiment Analysis) Đánh Giá ITviec
+# Đồ Án Môn Học Máy Học: Phân Tích Cảm Xúc (Sentiment Analysis) Đánh Giá ITviec
 
 ## 1. Giới thiệu Đề tài
-Dự án tập trung chuyên sâu vào bài toán **Phân tích Cảm xúc (Sentiment Analysis)** từ dữ liệu đánh giá của nhân viên và ứng viên trên nền tảng **ITviec**.
-
-* **Repository:** [https://github.com/mrkiss-it/NLP-Sentiment-Analysis-ITviec](https://github.com/mrkiss-it/NLP-Sentiment-Analysis-ITviec)
+Dự án tập trung giải quyết bài toán **Phân loại Cảm xúc (Sentiment Classification)** từ dữ liệu văn bản đánh giá của nhân viên và ứng viên trên nền tảng **ITviec** bằng các phương pháp **Học Máy (Machine Learning)** và Trích xuất đặc trưng văn bản.
 
 ### Mục tiêu chính:
-1. **Phân loại cảm xúc đa lớp (Multi-class Sentiment Classification):** Tự động phân loại đánh giá thành 3 sắc thái: **Tích cực (Positive)**, **Tiêu cực (Negative)**, **Trung tính (Neutral)**.
-2. **So sánh đa dạng mô hình:** Thử nghiệm, tinh chỉnh và so sánh hiệu năng của ít nhất 4 thuật toán Machine Learning (Multinomial Naive Bayes, Logistic Regression, Linear SVM, Random Forest), mô hình kết hợp **Stacking Ensemble Classifier**, và mô hình Pretrained Transformer (**ViSoBERT / PhoBERT**).
-3. **Phân tích Insight cảm xúc doanh nghiệp:** Trích xuất các từ khóa tích cực/tiêu cực đặc trưng (WordCloud) theo từng công ty công nghệ cụ thể và phân tích các yếu tố ảnh hưởng đến độ hài lòng của nhân sự.
-4. **Xây dựng ứng dụng Demo (Deployment):** Tạo giao diện trực quan (Streamlit / Gradio) cho phép nhập đánh giá và dự đoán cảm xúc theo thời gian thực.
+1. **Hiểu và phân tích dữ liệu (EDA):** Khám phá phân bố rating, độ dài đánh giá, mức độ mất cân bằng lớp và mối tương quan giữa các điểm thành phần.
+2. **Tiền xử lý và trích xuất đặc trưng (Feature Extraction):** Chuẩn hóa văn bản tiếng Việt, tách từ ghép, xử lý teencode/emoji và chuyển đổi sang ma trận vector đặc trưng số **TF-IDF (N-gram 1-2)**.
+3. **Huấn luyện và so sánh các mô hình Machine Learning:** Cài đặt, tinh chỉnh siêu tham số và so sánh hiệu năng của ít nhất 5 thuật toán: **Multinomial Naive Bayes, Logistic Regression, Support Vector Machine (Linear SVM), Random Forest Classifier, Stacking Ensemble Classifier** (kèm mở rộng đối sánh với mô hình Deep Learning ViSoBERT).
+4. **Đánh giá và phân tích lỗi (Evaluation & Error Analysis):** Sử dụng Stratified 5-Fold Cross Validation và tập Test độc lập; đánh giá qua Macro F1-Score, Confusion Matrix, phân tích Overfitting/Underfitting và nguyên nhân nhầm lẫn.
+5. **Khai phá Insight & Ứng dụng Demo:** Trích xuất từ khóa tích cực/tiêu cực theo từng công ty công nghệ và xây dựng giao diện dự đoán thời gian thực (Streamlit/Gradio).
 
 ---
 
@@ -31,7 +30,7 @@ raw_review_text = Title + " . " + What I liked + " . " + Suggestions for improve
 | ⭐⭐⭐ (3 sao) | **`Neutral`** *(Trung tính)* | Đánh giá ở mức trung hòa, cân bằng; nội dung thường có cả điểm khen lẫn điểm chê tương đương nhau. | 1,639 | 19.47% |
 | ⭐⭐ (2 sao)<br>⭐ (1 sao) | **`Negative`** *(Tiêu cực)* | Đánh giá thể hiện sự thất vọng, bức xúc về chính sách OT, quản lý yếu kém, môi trường độc hại hoặc chế độ đãi ngộ không thỏa đáng. | 570 | 6.77% |
 
-> **Audit tính nhất quán nhãn:** Lexicon, trường `Recommend?`, text trùng và một mẫu gán nhãn thủ công được dùng để phát hiện bất đồng với Rating. Các tín hiệu này chỉ hỗ trợ audit; chúng không biến weak labels thành ground truth.
+> **Audit tính nhất quán nhãn:** Lexicon, trường `Recommend?`, text trùng và một mẫu gán nhãn thủ công được dùng để phát hiện bất đồng với Rating.
 
 ### 2.3. Thách thức đặc thù của Dữ liệu ITviec & Chiến lược Tiền xử lý Đa cấp
 - **Thách thức:** Review ngành công nghệ mang tính đặc thù rất cao:
@@ -40,8 +39,8 @@ raw_review_text = Title + " . " + What I liked + " . " + Suggestions for improve
   3. Biểu tượng cảm xúc (Emoji / Emojicon) thể hiện thái độ mạnh mẽ (*:), :((, ^^, 😡, ❤️, 👍*).
   4. Hiện tượng mất cân bằng dữ liệu nghiêm trọng (Positive chiếm đến 73.76% trong khi Negative chỉ 6.77%).
 - **Chiến lược làm sạch 2 tầng (Dual-tier Preprocessing):**
-  - **Tầng 1 - `clean_basic_text`:** Chuẩn hóa Unicode NFC, xóa link/email, giải mã emoji thành từ ngữ cảm xúc (`:)` $\to$ `tích_cực`, `😡` $\to$ `tiêu_cực`), dịch teencode và thuật ngữ IT sang tiếng Việt chuẩn. **Giữ nguyên cấu trúc ngữ pháp tự nhiên** $\to$ Tối ưu cho các mô hình ngôn ngữ sâu Transformer (**ViSoBERT / PhoBERT**).
-  - **Tầng 2 - `clean_advance_text`:** Tách từ ghép tiếng Việt (`underthesea.word_tokenize`) và lọc bỏ từ dừng vô nghĩa (nhưng bảo lưu các từ mang sắc thái phủ định như *không, chẳng, chưa*). **Tối ưu không gian vector từ vựng** $\to$ Dành riêng cho các mô hình Machine Learning cổ điển (**SVM, Naive Bayes, Logistic Regression, Random Forest**).
+  - **Tầng 1 - `clean_basic_text`:** Chuẩn hóa Unicode NFC, xóa link/email, giải mã emoji thành từ ngữ cảm xúc (`:)` $\to$ `tích_cực`, `😡` $\to$ `tiêu_cực`), dịch teencode và thuật ngữ IT sang tiếng Việt chuẩn.
+  - **Tầng 2 - `clean_advance_text`:** Tách từ ghép tiếng Việt (`underthesea.word_tokenize`) và lọc bỏ từ dừng vô nghĩa (nhưng bảo lưu các từ mang sắc thái phủ định như *không, chẳng, chưa*). **Tối ưu không gian vector từ vựng** $\to$ Dành riêng cho các mô hình Machine Learning (**SVM, Naive Bayes, Logistic Regression, Random Forest, Stacking**).
 
 ### 2.4. Sơ đồ Luồng Xử lý Tổng thể (End-to-End Pipeline)
 
@@ -62,18 +61,18 @@ flowchart TD
     C --> D["Trích xuất đặc trưng (src/features.py)"]
     
     subgraph D ["Feature Engineering"]
-        D1["Pipeline chính: TF-IDF text-only<br>N-gram + Sublinear TF"]
+        D1["Pipeline chính: TF-IDF text-only<br>N-gram (1,2) + Sublinear TF"]
         D2["Ablation: Text + Lexicon"]
-        D3["Diagnostic riêng: điểm khía cạnh<br>không dùng cho demo text-only"]
+        D3["Diagnostic: Điểm khía cạnh đánh giá"]
     end
     
     D --> E["Huấn luyện & Xử lý Mất cân bằng (src/models.py)"]
     
-    subgraph E ["Modeling & Balancing"]
-        E1["Mô hình ML: MNB, Linear SVM, Logistic Regression, Random Forest"]
+    subgraph E ["Machine Learning Modeling"]
+        E1["Mô hình ML: Multinomial NB, Linear SVM, Logistic Regression, Random Forest"]
         E2["Xử lý Mất cân bằng: Class Weighting ('balanced') / SMOTE"]
         E3["Stacking Ensemble Classifier"]
-        E4["Fine-tuning Pretrained ViSoBERT"]
+        E4["So sánh mở rộng: Fine-tuning Pretrained ViSoBERT"]
     end
     
     E --> F["Đánh giá & Khai phá Insight Doanh nghiệp"]
@@ -86,9 +85,9 @@ flowchart TD
 ```
 
 ### 2.5. Ý tưởng Trích xuất Đặc trưng, Cân bằng Dữ liệu & Đánh giá
-1. **Pipeline NLP chính là text-only:** TF-IDF N-gram giúp bắt cụm từ ngữ cảnh (*"rất tốt", "quá tệ", "thiếu minh bạch"*) và khớp với ứng dụng chỉ nhận văn bản. Lexicon và điểm khía cạnh được đánh giá bằng ablation; không mặc định ghép vào mô hình chính nếu cross-validation không chứng minh lợi ích.
-2. **Xử lý Mất cân bằng lớp (Handling Class Imbalance):** Áp dụng trọng số lớp nghịch đảo `class_weight='balanced'` trong hàm tối ưu của mô hình để phạt nặng hơn khi đoán sai lớp thiểu số (Negative và Neutral), đảm bảo mô hình không bị thiên vị sang lớp Positive.
-3. **Tiêu chí Đánh giá Khách quan:** Sử dụng **Macro F1-Score** (trung bình F1 của cả 3 lớp) làm độ đo quyết định thay vì Accuracy thông thường, nhằm phản ánh chính xác năng lực phân loại trên tất cả các sắc thái cảm xúc.
+1. **Pipeline ML chính là text-only:** TF-IDF N-gram (1, 2) giúp mô hình học được cụm từ ngữ cảnh (*"rất tốt", "quá tệ", "thiếu minh bạch"*) và khớp với ứng dụng thực tế.
+2. **Xử lý Mất cân bằng lớp (Handling Class Imbalance):** Áp dụng trọng số lớp nghịch đảo `class_weight='balanced'` trong hàm mất mát của mô hình để phạt nặng hơn khi đoán sai lớp thiểu số (Negative và Neutral).
+3. **Tiêu chí Đánh giá Khách quan:** Sử dụng **Macro F1-Score** (trung bình F1 của cả 3 lớp) làm độ đo quyết định chính thay vì Accuracy thông thường, phản ánh chính xác hiệu quả trên toàn bộ các lớp.
 
 ---
 
@@ -96,9 +95,9 @@ flowchart TD
 
 | Thành viên | Phân công | Kế hoạch chi tiết |
 | :--- | :--- | :--- |
-| **👑 TV1: Hoàng Hôn** *(Trưởng nhóm)* | `Business & Data Processing` | [Xem kế hoạch TV1](reports/member_plans/TV1_HoangHon_Business_DataProcessing.md) |
+| **👑 TV1: Hoàng Hôn** *(Trưởng nhóm)* | `Business, Data Processing & Report` | [Xem kế hoạch TV1](reports/member_plans/TV1_HoangHon_Business_DataProcessing.md) |
 | **👨‍💻 TV2: Văn Duy** | `Feature Engineering & EDA` | [Xem kế hoạch TV2](reports/member_plans/TV2_VanDuy_FeatureEngineering_EDA.md) |
-| **👨‍💻 TV3: Duy Khang** | `Modeling & Hyperparameter Tuning` | [Xem kế hoạch TV3](reports/member_plans/TV3_DuyKhang_Modeling_Tuning.md) |
+| **👨‍💻 TV3: Duy Khang** | `ML Modeling & Hyperparameter Tuning` | [Xem kế hoạch TV3](reports/member_plans/TV3_DuyKhang_Modeling_Tuning.md) |
 | **👨‍💻 TV4: Thành Trung** | `Evaluation, Sentiment Insights & Deployment` | [Xem kế hoạch TV4](reports/member_plans/TV4_ThanhTrung_Evaluation_Deployment.md) |
 
 * Toàn bộ kế hoạch tổng hợp: [reports/project_plan_and_work_assignment.md](reports/project_plan_and_work_assignment.md)
@@ -108,34 +107,35 @@ flowchart TD
 ## 4. Cấu trúc thư mục (Project Structure)
 
 ```text
-Do_An_Sentiment_Analysis/
+Do_An_May_Hoc_Sentiment_Analysis/
 ├── data/
 │   ├── raw/                 # Dữ liệu gốc (Reviews.xlsx, Overview_Companies.xlsx, ...)
 │   ├── processed/           # Dữ liệu sạch (reviews_cleaned.xlsx, reviews_cleaned.csv)
 │   ├── dictionaries/        # Từ điển tiếng Việt (teencode, stopwords, emoji, lexicon)
-│   └── annotation/          # Dữ liệu phục vụ kiểm định/audit chất lượng nhãn thủ công
+│   └── annotation/          # Dữ liệu phục vụ kiểm định/audit chất lượng nhãn
 ├── notebooks/
 │   ├── 01_data_exploration_eda.ipynb            # Khám phá & phân tích phân bố dữ liệu (EDA)
 │   ├── 02_text_preprocessing.ipynb              # Tiền xử lý & chuẩn hóa tiếng Việt
-│   ├── 03_sentiment_modeling_ml.ipynb           # Huấn luyện & tối ưu mô hình Machine Learning
-│   ├── 04_sentiment_modeling_deeplearning.ipynb # Huấn luyện với ViSoBERT / Transformer
+│   ├── 03_sentiment_modeling_ml.ipynb           # Huấn luyện & tối ưu các mô hình Machine Learning
+│   ├── 04_sentiment_modeling_deeplearning.ipynb # Mở rộng đối sánh ViSoBERT
 │   └── 05_company_sentiment_insights.ipynb      # Phân tích cảm xúc theo công ty & WordCloud
 ├── src/
 │   ├── __init__.py
-│   ├── preprocessing.py     # Pipeline làm sạch văn bản, chuẩn hóa tiếng Việt (TV1)
-│   ├── features.py          # Trích xuất đặc trưng TF-IDF N-gram, SMOTE, chia tập (TV2)
-│   ├── models.py            # Huấn luyện, đánh giá & so sánh mô hình phân loại (TV3)
+│   ├── preprocessing.py     # Pipeline làm sạch văn bản, chuẩn hóa tiếng Việt
+│   ├── features.py          # Trích xuất đặc trưng TF-IDF N-gram, SMOTE, chia tập
+│   ├── models.py            # Huấn luyện, đánh giá & so sánh mô hình phân loại ML
 │   └── utils.py             # Hàm tiện ích (vẽ WordCloud, đọc dữ liệu)
 ├── models/                  # Lưu trữ checkpoint và vectorizer (.joblib, manifest.json)
 ├── tests/                   # Bộ kiểm thử tự động (Unit Tests)
 ├── scripts/                 # Các script bổ trợ sinh mẫu và tiện ích
 ├── reports/
 │   ├── figures/             # 9 biểu đồ EDA trực quan chất lượng cao (300 DPI)
+│   ├── De_Cuong_Do_An_Mon_Hoc_May_Hoc.md # Đề cương chuẩn theo yêu cầu môn Máy học
 │   ├── overview_for_team.md # Tài liệu tóm tắt logic dự án dễ hiểu cho cả nhóm
-│   ├── eda_feature_engineering.md # Báo cáo chi tiết EDA & Phương pháp trích xuất đặc trưng
+│   ├── eda_feature_engineering.md # Báo cáo chi tiết EDA & Trích xuất đặc trưng
 │   ├── final_report_outline.md # Đề cương chi tiết báo cáo đồ án
 │   ├── project_plan_and_work_assignment.md # Bảng phân công & timeline nhóm 4 người
-│   └── member_plans/        # File kế hoạch hành động chi tiết riêng của 4 thành viên
+│   └── member_plans/        # Kế hoạch hành động chi tiết của 4 thành viên
 ├── requirements.txt         # Danh sách thư viện Python cần thiết
 ├── requirements.lock        # Khóa phiên bản môi trường cố định
 └── README.md                # Hướng dẫn tổng quan
@@ -143,66 +143,37 @@ Do_An_Sentiment_Analysis/
 
 ---
 
-## 5. Hướng dẫn Thành viên Clone & Phối hợp trên Git (Git Workflow)
+## 5. Quy trình chạy thực nghiệm (Notebooks Workflow)
 
-### Bước 1: Clone dự án về máy
-```bash
-git clone https://github.com/mrkiss-it/NLP-Sentiment-Analysis-ITviec.git
-cd NLP-Sentiment-Analysis-ITviec
-```
-
-### Bước 2: Cài đặt môi trường & Thư viện
-```bash
-pip install -r requirements.txt
-```
-
-### Bước 3: Tạo nhánh (Branch) riêng cho từng thành viên
-Mỗi thành viên tạo và làm việc trên một nhánh riêng biệt:
-```bash
-# Đối với TV1 (Hoàng Hôn):
-git checkout -b feature/data-preprocessing
-
-# Đối với TV2 (Văn Duy):
-git checkout -b feature/eda-features
-
-# Đối với TV3 (Duy Khang):
-git checkout -b feature/modeling-tuning
-
-# Đối với TV4 (Thành Trung):
-git checkout -b feature/evaluation-insights-demo
-```
-
-### Bước 4: Commit & Đẩy code lên nhánh của mình
-```bash
-git add .
-git commit -m "feat: mo ta cong viec da hoan thanh"
-git push origin feature/<ten-nhanh-cua-ban>
-```
+1. **Bước 1 — Tiền xử lý & Chuẩn hóa dữ liệu ([02_text_preprocessing.ipynb](notebooks/02_text_preprocessing.ipynb) / [scripts/run_step1_preprocessing.py](scripts/run_step1_preprocessing.py)):**
+   - Tiền xử lý 2 tầng (`clean_basic_text` & `clean_advance_text`), chuẩn hóa Unicode, emoji/emoticon, teencode, thuật ngữ IT và lọc stopwords.
+   - Gán nhãn cảm xúc 3 lớp và xuất `data/processed/reviews_cleaned.xlsx` (8.417 mẫu).
+2. **Bước 2 — Khám phá dữ liệu (EDA) & Trích xuất TF-IDF ([01_data_exploration_eda.ipynb](notebooks/01_data_exploration_eda.ipynb)):**
+   - Phân tích thống kê phân bố số sao rating, độ dài review, tương quan các khía cạnh, xuất 9 biểu đồ 300 DPI vào `reports/figures/`.
+   - Trích xuất đặc trưng **TF-IDF N-gram (1, 2)** với `sublinear_tf=True`, `max_features=5000`, chia tập Stratified 80/20 và đóng gói artifacts vào `models/` (`train_test_features.joblib`, `artifact_manifest.json`).
+3. **Bước 3 — Huấn luyện & Tối ưu Machine Learning ([03_sentiment_modeling_ml.ipynb](notebooks/03_sentiment_modeling_ml.ipynb)):**
+   - Nạp ma trận đặc trưng từ `models/`, huấn luyện và tinh chỉnh 5 thuật toán Machine Learning (Naive Bayes, SVM, Logistic Regression, Random Forest, Stacking Ensemble) bằng Stratified 5-Fold Cross Validation trên tập Development.
+   - Lưu checkpoint model tối ưu vào `models/best_sentiment_model.joblib`.
+4. **Bước 4 — Mở rộng Deep Learning ([04_sentiment_modeling_deeplearning.ipynb](notebooks/04_sentiment_modeling_deeplearning.ipynb)):**
+   - Thử nghiệm đối sánh mô hình Pretrained Transformer (ViSoBERT / PhoBERT) cho phân loại cảm xúc tiếng Việt.
+5. **Bước 5 — Khai phá Insight doanh nghiệp & Đánh giá Final Test ([05_company_sentiment_insights.ipynb](notebooks/05_company_sentiment_insights.ipynb)):**
+   - Đánh giá mô hình tốt nhất trên tập Final Test độc lập (Macro F1, Precision, Recall, Confusion Matrix, Error Analysis).
+   - Trực quan hóa đám mây từ khóa (WordCloud) Tích cực / Tiêu cực và phân tích cảm xúc theo từng công ty IT tiêu biểu.
 
 ---
 
-## 6. Quy trình thực hiện Notebooks
+## 6. Bảng Theo dõi Tiến độ Dự án (Project Progress & Deliverables)
 
-1. **Giai đoạn 1 (EDA & Data):**
-   - Chạy `notebooks/01_data_exploration_eda.ipynb` để khám phá phân bố số sao rating và cảm xúc.
-   - Chạy `notebooks/02_text_preprocessing.ipynb` để làm sạch dữ liệu văn bản và xuất ra `data/processed/reviews_cleaned.xlsx`.
-2. **Giai đoạn 2 (Modeling):**
-   - Chạy `notebooks/03_sentiment_modeling_ml.ipynb` để huấn luyện, tinh chỉnh tham số và so sánh các mô hình Machine Learning.
-   - (Tùy chọn) Chạy `notebooks/04_sentiment_modeling_deeplearning.ipynb` để thử nghiệm mô hình Transformer (ViSoBERT).
-3. **Giai đoạn 3 (Insights & Demo):**
-   - Chạy `notebooks/05_company_sentiment_insights.ipynb` để xuất biểu đồ thống kê cảm xúc và WordCloud theo từng công ty.
+*Cập nhật lần cuối: 29/08/2026 — Giai đoạn 1 hoàn thành (TV1 hoàn tất 25%) ✅ | Giai đoạn 2 chuẩn bị triển khai ⏳*
 
----
+| STT | Hạng mục công việc | Phụ trách chính | Trạng thái | Chi tiết kế hoạch bàn giao |
+| :---: | :--- | :--- | :---: | :--- |
+| **1** | **Thiết lập dự án & Bộ từ điển** | **TV1: Hoàng Hôn** | ✅ **Hoàn thành** | Repo, `requirements.txt`, 10 bộ từ điển tại `data/dictionaries/` đã tối ưu và sẵn sàng. |
+| **2** | **Pipeline Tiền xử lý & Gán nhãn** | **TV1: Hoàng Hôn** | ✅ **Hoàn thành** | `src/preprocessing.py`, `data/processed/reviews_cleaned.xlsx` & `.csv` (8.417 mẫu × 23 cột, 3 nhãn: Positive 73.8% / Neutral 19.5% / Negative 6.8%). |
+| **3** | **Phân tích EDA & Trích xuất TF-IDF** | **TV2: Văn Duy** | ⏳ **Sẵn sàng triển khai** | Tiếp nhận `reviews_cleaned.xlsx` từ TV1, thực hiện EDA trong `01_data_exploration_eda.ipynb`, xây dựng `src/features.py`, xuất 9 biểu đồ 300 DPI tại `reports/figures/`, chia tập Stratified 80/20 và đóng gói artifacts TF-IDF (`train_test_features.joblib`, `text_tfidf_vectorizer.joblib`, `artifact_manifest.json`) bàn giao cho TV3. |
+| **4** | **Huấn luyện Mô hình Machine Learning** | **TV3: Duy Khang** | ⏳ **Chờ TV2 bàn giao** | Tiếp nhận artifacts từ TV2, làm việc trên `03_sentiment_modeling_ml.ipynb` và `src/models.py`, huấn luyện và tinh chỉnh 5 thuật toán Machine Learning (Naive Bayes, Logistic Regression, Linear SVM, Random Forest, Stacking Ensemble) bằng Stratified 5-Fold Cross Validation trên tập Development; lưu checkpoint model tốt nhất vào `models/best_sentiment_model.joblib`. |
+| **5** | **Đánh giá Final Test, Insight & Demo** | **TV4: Thành Trung** | ⏳ **Chờ TV3 bàn giao** | Tiếp nhận model tốt nhất từ TV3, làm việc trên `05_company_sentiment_insights.ipynb`: đánh giá Final Test độc lập đúng 1 lần (Macro F1, Precision, Recall, Confusion Matrix, Error Analysis), trích xuất WordCloud theo công ty và xây dựng Web Demo tương tác (Streamlit/Gradio). |
+| **6** | **Tổng hợp Báo cáo Word & Slide trình chiếu** | **TV1 & Cả nhóm** | ⏳ **Giai đoạn cuối** | Soạn thảo toàn văn Báo cáo Word/PDF và hoàn thiện Slide PowerPoint theo đúng cấu trúc đề cương `reports/De_Cuong_Do_An_Mon_Hoc_May_Hoc.md`. |
 
-## 7. Bảng Theo dõi Tiến độ Hiện tại (Current Project Status)
 
-*Cập nhật lần cuối: 28/08/2026*
 
-| Hạng mục công việc | Phụ trách chính | Trạng thái | Chi tiết kết quả bàn giao |
-| :--- | :--- | :---: | :--- |
-| **1. Thiết lập dự án & Bộ từ điển** | **TV1: Hoàng Hôn** | ✅ **100% (Hoàn thành)** | Cấu trúc Repo, `requirements.txt`, bộ từ điển đầy đủ trong `data/dictionaries/` (*teencode, emojicon, positive/negative words & emoji, stopwords*). |
-| **2. Pipeline Tiền xử lý & Gán nhãn** | **TV1: Hoàng Hôn** | ✅ **100% (Hoàn thành)** | Hoàn thiện module `src/preprocessing.py`, notebook `02_text_preprocessing.ipynb`. Xuất thành công `data/processed/reviews_cleaned.xlsx` (8,417 mẫu, 23 cột, gán nhãn 3 lớp: *6,208 Positive, 1,639 Neutral, 570 Negative*). |
-| **3. Phân tích EDA & Đặc trưng TF-IDF** | **TV2: Văn Duy** | ✅ **100% (Hoàn thành & Bàn giao)** | Hoàn thiện `01_data_exploration_eda.ipynb`, `src/features.py`, xuất 9 biểu đồ 300 DPI tại `reports/figures/`, chia tập Stratified 80/20 (khóa Final Test chống rò rỉ dữ liệu), đóng gói artifacts (`train_test_features.joblib`, `text_tfidf_vectorizer.joblib`, `artifact_manifest.json`) và tài liệu `reports/eda_feature_engineering.md` + `reports/overview_for_team.md`. |
-| **4. Huấn luyện Mô hình Machine Learning** | **TV3: Duy Khang** | 🔄 **Đang triển khai** | Sử dụng trực tiếp bộ artifacts từ TV2 trong `03_sentiment_modeling_ml.ipynb`, chọn và tinh chỉnh siêu tham số 4 thuật toán ML (Naive Bayes, SVM, Logistic Regression, Random Forest) & Stacking Ensemble bằng 5-Fold CV trên tập Development; chỉ đánh giá Final Test sau khi khóa mô hình. |
-| **5. Đánh giá, Insight & Web Demo** | **TV4: Thành Trung** | ⏳ **Sẵn sàng triển khai** | Chuẩn bị chạy `05_company_sentiment_insights.ipynb` (WordCloud công ty, Confusion Matrix, Error Analysis) và xây dựng Web Demo tương tác thời gian thực (Streamlit/Gradio). |
-| **6. Báo cáo tổng hợp & Slide thuyết trình** | **TV1 & Cả nhóm** | ⏳ **Giai đoạn tiếp theo** | Soạn thảo theo mẫu đề cương `reports/final_report_outline.md`. |

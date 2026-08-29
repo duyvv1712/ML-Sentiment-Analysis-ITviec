@@ -1,54 +1,51 @@
 # KẾ HOẠCH CHI TIẾT - THÀNH VIÊN 3: DUY KHANG
-**Phân công:** `Modeling & Hyperparameter Tuning`  
-**Thời gian thực hiện:** 4 Ngày cốt lõi (Tuần 2)  
-**Mục tiêu chính:** Xây dựng, huấn luyện và tối ưu ít nhất 4 mô hình Machine Learning, mô hình Stacking Ensemble và thử nghiệm mô hình Pretrained ViSoBERT.
+**Đề tài:** Phân tích cảm xúc đánh giá ITviec  
+**Môn học:** Máy học (Machine Learning)  
+**Phân công:** `Machine Learning Modeling, Hyperparameter Tuning & Cross-Validation`  
+**Thời gian thực hiện:** 5 Ngày cốt lõi (Giai đoạn 2) & Phối hợp hoàn thiện báo cáo  
 
 ---
 
-## 📌 I. DANH SÁCH NHIỆM VỤ CHI TIẾT (DAY-BY-DAY CHECKLIST)
+## 📌 I. DANH SÁCH NHIỆM VỤ CHI TIẾT (CHECKLIST)
 
-### 🟢 Ngày 1: Huấn luyện 4 Mô hình Machine Learning Cơ sở (Base Models)
-- [ ] Nhận tập đặc trưng $X_{train}, X_{test}, y_{train}, y_{test}$ từ **TV2 (Văn Duy)**.
-- [ ] Mở và làm việc trên [notebooks/03_sentiment_modeling_ml.ipynb](file:///d:/Trí tuệ nhân tạo/HK2/Xử lý ngôn ngữ tự nhiên/Do_An_Sentiment_Analysis/notebooks/03_sentiment_modeling_ml.ipynb) và [src/models.py](file:///d:/Trí tuệ nhân tạo/HK2/Xử lý ngôn ngữ tự nhiên/Do_An_Sentiment_Analysis/src/models.py).
-- [ ] **Khởi tạo và huấn luyện 4 mô hình Supervised Learning:**
-  1. **Multinomial Naive Bayes:** Mô hình Baseline cổ điển cho phân loại văn bản (`MultinomialNB(alpha=1.0)`).
-  2. **Logistic Regression:** Mô hình hồi quy logistic tuyến tính mạnh mẽ (`LogisticRegression(max_iter=1000, class_weight='balanced')`).
-  3. **Support Vector Machine (Linear SVM):** Mô hình SVM tối ưu cho vector TF-IDF không gian nhiều chiều (`SVC(kernel='linear', C=1.0, class_weight='balanced', probability=True)`).
-  4. **Random Forest Classifier / Gradient Boosting:** Mô hình cây quyết định kết hợp (`RandomForestClassifier(n_estimators=100, class_weight='balanced')`).
+### 🟢 Giai đoạn 1: Xây dựng & Huấn luyện các mô hình Machine Learning
+- [ ] **Làm việc trên [notebooks/03_sentiment_modeling_ml.ipynb](file:///d:/Trí%20tuệ%20nhân%20tạo/HK2/Máy%20học/Project/Do_An_May_Hoc_Sentiment_Analysis/notebooks/03_sentiment_modeling_ml.ipynb) và [src/models.py](file:///d:/Trí%20tuệ%20nhân%20tạo/HK2/Máy%20học/Project/Do_An_May_Hoc_Sentiment_Analysis/src/models.py):**
+  - Đọc ma trận đặc trưng `train_test_features.joblib` do TV2 bàn giao.
+- [ ] **Cài đặt 5 thuật toán Machine Learning phân loại:**
+  1. **Multinomial Naive Bayes (MNB):** Mô hình Baseline đánh giá xác suất từ khóa.
+  2. **Logistic Regression (LR):** Mô hình tuyến tính với hàm mất mát Log-loss, áp dụng `class_weight='balanced'`.
+  3. **Support Vector Machine (Linear SVM):** Tìm siêu phẳng phân cách cực đại hóa biên độ (Margin), áp dụng `class_weight='balanced'`.
+  4. **Random Forest Classifier (RF):** Mô hình Ensemble Bagging nhiều cây quyết định, xử lý phi tuyến.
+  5. **Stacking Ensemble Classifier:** Kết hợp các mô hình cơ sở (Base Learners) qua một Meta-Classifier để nâng cao hiệu năng tổng thể.
 
-### 🟢 Ngày 2: Tinh chỉnh Siêu tham số (Hyperparameter Tuning với K-Fold CV)
-- [ ] Sử dụng `GridSearchCV` hoặc `RandomizedSearchCV` kết hợp **5-Fold Cross Validation** để tìm bộ siêu tham số tối ưu cho từng mô hình:
-  - **Naive Bayes:** Tinh chỉnh `alpha` $\in [0.01, 0.1, 0.5, 1.0, 2.0]$.
-  - **Logistic Regression:** Tinh chỉnh `C` $\in [0.1, 1.0, 5.0, 10.0]$, `solver=['lbfgs', 'saga']`, `penalty=['l1', 'l2']`.
-  - **Linear SVM:** Tinh chỉnh `C` $\in [0.1, 0.5, 1.0, 2.0, 5.0]$.
-  - **Random Forest:** Tinh chỉnh `n_estimators=[100, 200]`, `max_depth=[10, 20, None]`.
-- [ ] Ghi nhận bảng điểm số Cross-Validation và điểm số trên tập Test của các mô hình sau khi tuning.
+### 🟢 Giai đoạn 2: Kỹ thuật xử lý mất cân bằng & Tinh chỉnh siêu tham số (Tuning)
+- [ ] **Xây dựng sklearn Pipeline chống Data Leakage:**
+  - TF-IDF Vectorizer phải nằm bên trong `sklearn.pipeline.Pipeline` cùng với từng model (chỉ `fit` trên tập train, `transform` trên tập val/test).
+  - Ví dụ: `Pipeline([('tfidf', TfidfVectorizer(...)), ('clf', LogisticRegression(...))])`.
+- [ ] **Xử lý mất cân bằng dữ liệu (Class Imbalance):**
+  - Thử nghiệm và so sánh cơ chế phân bổ trọng số lớp nghịch đảo `class_weight='balanced'` vs kỹ thuật tái lấy mẫu (SMOTE / Random Undersampling).
+- [ ] **Tối ưu hóa siêu tham số (Hyperparameter Tuning):**
+  - Áp dụng **Stratified 5-Fold Cross Validation** với `scoring='f1_macro'` trên tập Development để tìm bộ tham số tốt nhất (GridSearchCV / RandomizedSearchCV).
+  - Tinh chỉnh: `C` (Logistic Regression, LinearSVC), `alpha` (Naive Bayes), `n_estimators`, `max_depth` (Random Forest).
+  - Định nghĩa Stacking rõ ràng: **Base learners = [MNB, LR, LinearSVC, RF]** → **Meta-learner = Logistic Regression** với `cv=5`.
+- [ ] **Khóa mô hình tối ưu:**
+  - Huấn luyện lại mô hình có điểm CV Macro F1 cao nhất trên toàn bộ tập Development (80%).
+  - Lưu checkpoint mô hình tốt nhất vào `models/best_sentiment_model.joblib`.
+  - Bàn giao mô hình đã khóa cho **TV4 (Thành Trung)** để đánh giá đúng 1 lần trên tập Final Test độc lập.
 
-### 🟢 Ngày 3: Xây dựng Mô hình Nâng cao (Stacking Ensemble & ViSoBERT)
-- [ ] **Mô hình kết hợp Stacking Classifier:**
-  - Kết hợp 3 mô hình cơ sở tốt nhất (`Naive Bayes`, `Logistic Regression`, `Linear SVM`) làm Base Estimators.
-  - Sử dụng `Logistic Regression` làm Final Estimator (Meta-Classifier) để tổng hợp trọng số dự đoán.
-- [ ] **Thử nghiệm Pretrained ViSoBERT (Deep Learning):**
-  - Mở [notebooks/04_sentiment_modeling_deeplearning.ipynb](file:///d:/Trí tuệ nhân tạo/HK2/Xử lý ngôn ngữ tự nhiên/Do_An_Sentiment_Analysis/notebooks/04_sentiment_modeling_deeplearning.ipynb).
-  - Tải mô hình `5CD-AI/Vietnamese-Sentiment-visobert` từ HuggingFace Transformers.
-  - Chạy dự đoán trên tập test để lấy điểm Benchmark so sánh với Machine Learning truyền thống.
-- [ ] **Lưu trữ mô hình:**
-  - Lưu file mô hình có kết quả tốt nhất vào: `models/best_sentiment_model.joblib`.
-- [ ] **Bàn giao:** Chuyển giao toàn bộ kết quả dự đoán (`y_pred_nb`, `y_pred_lr`, `y_pred_svm`, `y_pred_stack`, `y_pred_visobert`) cho **TV4 (Thành Trung)**.
-
-### 🟢 Ngày 4 & Tuần 3: Viết Báo cáo & Hoàn thiện Số liệu
-- [ ] Soạn thảo **Mục 3.2 (Thiết kế mô hình)** và **Mục 3.3 (Kỹ thuật tinh chỉnh siêu tham số)** trong báo cáo.
-- [ ] Xuất bảng so sánh hiệu năng tổng hợp (Accuracy, F1-Score) và vẽ biểu đồ cột so sánh F1-Score giữa các mô hình.
+### 🟢 Giai đoạn 3: Soạn thảo Báo cáo môn Máy học
+- [ ] **Viết nội dung Báo cáo:**
+  - **Mục 3.3:** Cơ sở lý thuyết của 5 mô hình Machine Learning, cơ chế Ensemble Stacking và kỹ thuật xử lý mất cân bằng dữ liệu.
+  - **Mục 3.4 & 5.1 (Phần Huấn luyện):** Bảng tổng hợp kết quả 5-Fold Cross Validation, giải thích lý do lựa chọn siêu tham số và lý giải vì sao mô hình tuyến tính (SVM/LR) hoạt động tốt trên không gian đặc trưng TF-IDF.
 
 ---
 
 ## 📦 II. ĐẦU VÀO & ĐẦU RA (INPUTS & OUTPUTS)
 
 * **Đầu vào (Inputs):**
-  - Ma trận đặc trưng $X_{train}, X_{test}, y_{train}, y_{test}$ từ TV2.
+  - Bộ dữ liệu ma trận TF-IDF `train_test_features.joblib` và `text_tfidf_vectorizer.joblib` từ TV2.
 * **Đầu ra (Outputs bàn giao):**
-  - Notebook hoàn chỉnh: [notebooks/03_sentiment_modeling_ml.ipynb](file:///d:/Trí tuệ nhân tạo/HK2/Xử lý ngôn ngữ tự nhiên/Do_An_Sentiment_Analysis/notebooks/03_sentiment_modeling_ml.ipynb) & [04_sentiment_modeling_deeplearning.ipynb](file:///d:/Trí tuệ nhân tạo/HK2/Xử lý ngôn ngữ tự nhiên/Do_An_Sentiment_Analysis/notebooks/04_sentiment_modeling_deeplearning.ipynb).
-  - Module code: [src/models.py](file:///d:/Trí tuệ nhân tạo/HK2/Xử lý ngôn ngữ tự nhiên/Do_An_Sentiment_Analysis/src/models.py).
-  - File mô hình đã huấn luyện: `models/best_sentiment_model.joblib`.
-  - Mảng dự đoán `y_pred` của các mô hình trên tập test gửi cho TV4.
-  - Nội dung Chương 3.2 - 3.3 của Báo cáo.
+  - Module code [src/models.py](file:///d:/Trí%20tuệ%20nhân%20tạo/HK2/Máy%20học/Project/Do_An_May_Hoc_Sentiment_Analysis/src/models.py).
+  - Notebook hoàn chỉnh [notebooks/03_sentiment_modeling_ml.ipynb](file:///d:/Trí%20tuệ%20nhân%20tạo/HK2/Máy%20học/Project/Do_An_May_Hoc_Sentiment_Analysis/notebooks/03_sentiment_modeling_ml.ipynb).
+  - File model tốt nhất đã lưu: `models/best_sentiment_model.joblib`.
+  - Bảng số liệu Cross-Validation phục vụ viết Báo cáo.

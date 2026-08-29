@@ -4,9 +4,22 @@ __pycache__/
 *$py.class
 
 # Caches and checkpoints
-.ipynb_checkpoints
+.ipynb_checkpoints/
 */.ipynb_checkpoints/*
 .pytest_cache/
+*_checkpoint*
+*.checkpoint.*
+
+# Temporary / Scratch / Logs
+scratch/
+*.log
+
+# Local personal files
+*.local.md
+
+# OS specific
+.DS_Store
+Thumbs.db
 
 # Virtual environments
 venv/

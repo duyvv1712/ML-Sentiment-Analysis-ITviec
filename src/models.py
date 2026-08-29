@@ -9,8 +9,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier, StackingClassifier
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
-from sklearn.model_selection import cross_val_score
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score
 
 class SentimentModelTrainer:
     """

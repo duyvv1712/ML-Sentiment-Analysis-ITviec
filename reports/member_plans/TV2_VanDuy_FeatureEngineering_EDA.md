@@ -1,59 +1,50 @@
 # KẾ HOẠCH CHI TIẾT - THÀNH VIÊN 2: VĂN DUY
-**Phân công:** `Feature Engineering & EDA`  
-**Thời gian thực hiện:** 4 Ngày cốt lõi (Tuần 1 & Đầu Tuần 2)  
-**Mục tiêu chính:** Phân tích khám phá dữ liệu (EDA), xây dựng pipeline NLP text-only bằng TF-IDF, khảo sát lexicon/aspect bằng ablation, xử lý mất cân bằng và bàn giao development/final-test có contract tái lập được.
+**Đề tài:** Phân tích cảm xúc đánh giá ITviec  
+**Môn học:** Máy học (Machine Learning)  
+**Phân công:** `Feature Engineering, Exploratory Data Analysis (EDA) & Data Splitting`  
+**Thời gian thực hiện:** 4 Ngày cốt lõi (Giai đoạn 1) & Hỗ trợ kỹ thuật modeling  
 
 ---
 
-## 📌 I. DANH SÁCH NHIỆM VỤ CHI TIẾT (DAY-BY-DAY CHECKLIST)
+## 📌 I. DANH SÁCH NHIỆM VỤ CHI TIẾT (CHECKLIST)
 
-### 🟢 Ngày 1: Khám phá Dữ liệu Toàn diện (EDA)
-- [x] Mở và chạy notebook [notebooks/01_data_exploration_eda.ipynb](../../notebooks/01_data_exploration_eda.ipynb).
-- [x] **Thực hiện các phân tích thống kê:**
-  - Thống kê phân bố số sao đánh giá (1 sao - 5 sao).
-  - Phân tích phân bố các nhãn cảm xúc: Tỷ lệ % của `Positive`, `Neutral`, `Negative`.
-  - Phân tích độ dài câu (số lượng từ trong `What I liked`, `Suggestions for improvement`).
-  - Kiểm tra mức độ tương quan giữa năm điểm khía cạnh thực có trong dữ liệu với weak label; không suy diễn quan hệ nhân quả và không báo cáo khía cạnh OT vì schema không có trường này.
-  - Phân tích phân bố theo công ty/thời gian, text trùng, lexicon coverage và bất nhất giữa `Recommend?` với weak label.
-- [x] Xuất và lưu các biểu đồ EDA chất lượng cao vào `reports/figures/` (ví dụ: `eda_rating_distribution.png`, `eda_sentiment_counts.png`).
+### 🟢 Giai đoạn 1: Khám phá phân tích dữ liệu (EDA) — ⏳ SẴN SÀNG TRIỂN KHAI
+- [ ] **Khám phá thống kê bộ dữ liệu ([01_data_exploration_eda.ipynb](file:///d:/Trí%20tuệ%20nhân%20tạo/HK2/Máy%20học/Project/Do_An_May_Hoc_Sentiment_Analysis/notebooks/01_data_exploration_eda.ipynb)):**
+  - Thống kê số lượng mẫu (8.417 review, 180 công ty).
+  - Phân tích phân bố số sao rating (1-5 sao) và mức độ mất cân bằng lớp: Positive (73.76%), Neutral (19.47%), Negative (6.77%).
+  - Phân tích phân bố độ dài văn bản đánh giá (ký tự, số từ).
+  - Phân tích tương quan giữa 5 khía cạnh thành phần (Lương thưởng, Đào tạo, Quản lý, Môi trường, OT) với Rating tổng.
+  - Phân tích phân bố đánh giá theo thời gian và theo từng công ty.
+- [ ] **Xuất 9 biểu đồ trực quan hóa 300 DPI:**
+  - Lưu trữ tại [reports/figures/](file:///d:/Trí%20tuệ%20nhân%20tạo/HK2/Máy%20học/Project/Do_An_May_Hoc_Sentiment_Analysis/reports/figures) để chèn trực tiếp vào Báo cáo và Slide.
 
-### 🟢 Ngày 2: Xây dựng Module Trích xuất Đặc trưng (Feature Engineering)
-- [x] Hoàn thiện module [src/features.py](../../src/features.py).
-- [x] **Cấu hình trích xuất đặc trưng văn bản (Text Features):**
-  - Sử dụng `TfidfVectorizer` trên trường `clean_advance_text`:
-    - Thử nghiệm `ngram_range=(1, 1)` và `ngram_range=(1, 2)`.
-    - Thiết lập `max_features` tối ưu (3000 - 5000 từ).
-    - Sử dụng `sublinear_tf=True` và lọc bỏ các từ xuất hiện quá ít (`min_df=2`).
-  - Chọn cấu hình bằng 5-fold CV trên development và lưu vectorizer text-only vào `models/text_tfidf_vectorizer.joblib`.
+### 🟢 Giai đoạn 2: Trích xuất đặc trưng (Feature Engineering) & Chia dữ liệu — ⏳ CHUẨN BỊ THỰC HIỆN
+- [ ] **Xây dựng module [src/features.py](file:///d:/Tr%C3%AD%20tu%E1%BB%87%20nh%C3%A2n%20t%E1%BA%A1o/HK2/M%C3%A1y%20h%E1%BB%8Dc/Project/Do_An_May_Hoc_Sentiment_Analysis/src/features.py):**
+  - Trích xuất đặc trưng **TF-IDF (Term Frequency - Inverse Document Frequency)** với `ngram_range=(1, 2)`, `sublinear_tf=True`, `max_features=5000`.
+  - Ablation study: so sánh **TF-IDF** vs **TF-IDF + Lexicon features** để xác định bộ đặc trưng nào cho Cross-Validation Macro F1 cao hơn.
+  - Thử nghiệm tích hợp `neutral_keywords.txt` (có sẵn trong `data/dictionaries/`) vào bộ đặc trưng Lexicon.
+- [ ] **Phân chia dữ liệu chuẩn chống rò rỉ (Data Splitting):**
+  - Áp dụng **Stratified Split 80/20**:
+    - **Development Set (80%):** 6.730 mẫu dùng cho Cross-Validation và huấn luyện mô hình.
+    - **Final Test Set (20%):** 1.683 mẫu khóa độc lập chống rò rỉ dữ liệu (data leakage).
+  - **Kiểm tra phân bố 3 lớp trong cả 2 tập** (Positive/Neutral/Negative) sau khi split, xác nhận Stratified giữ đúng tỷ lệ 73.8/19.5/6.8%.
+- [ ] **Đóng gói Artifacts bàn giao:**
+  - Lưu trữ `models/train_test_features.joblib`, `models/text_tfidf_vectorizer.joblib`, `models/artifact_manifest.json` để bàn giao cho TV3.
 
-### 🟢 Ngày 3: Ghép đặc trưng số & Xử lý Mất cân bằng dữ liệu (Imbalanced Data)
-- [x] **Ablation đặc trưng số (Numerical Features):**
-  - Lấy các thuộc tính số do TV1 tạo ra: `pos_w`, `neg_w`, `sentiment_ratio` và điểm rating thành phần (nếu có).
-  - Fit `MinMaxScaler` bên trong từng fold development.
-  - So sánh text-only, text + lexicon, aspect-only và structured hybrid. Chỉ text-only được bàn giao làm pipeline NLP chính.
-- [x] **Chiến lược chia tập & Xử lý mất cân bằng:**
-  - Loại text trùng/bất đồng rồi chia **80% development - 20% final test** với `stratify=y`; final test không được dùng để chọn feature.
-  - Khảo sát và thử nghiệm kỹ thuật cân bằng lớp:
-    - Cách 1: Áp dụng `SMOTE` từ thư viện `imbalanced-learn` trên tập Train.
-    - Cách 2: Thiết lập `class_weight='balanced'` cho các mô hình.
-- [x] **Bàn giao:** Chuyển giao ma trận đặc trưng $X_{train}, X_{test}, y_{train}, y_{test}$ và file dữ liệu cho **TV3 (Duy Khang)**.
-
-### 🟢 Ngày 4 & Tuần 3: Viết Báo cáo & Kiểm thử chéo
-- [x] Soạn thảo **Mục 2.1, 2.2 (Tổng quan dữ liệu & EDA)** và **Mục 3.1 (Phương pháp trích xuất đặc trưng)** trong `reports/eda_feature_engineering.md`.
-- [x] Chèn các biểu đồ phân tích EDA vào file báo cáo.
-- [ ] Hỗ trợ TV1 rà soát, dọn dẹp code các Jupyter Notebook để đảm bảo chạy mượt từ đầu đến cuối không lỗi runtime.
+### 🟢 Giai đoạn 3: Soạn thảo Báo cáo môn Máy học
+- [ ] **Viết nội dung Báo cáo:**
+  - **Mục 2:** Phân tích mô tả bộ dữ liệu, phân bố lớp và tỷ lệ phân chia tập dữ liệu.
+  - **Mục 3.1:** Toàn bộ nội dung Phân tích khám phá dữ liệu (EDA) kèm biểu đồ và nhận xét.
+  - **Mục 3.2 (Phần Feature Engineering):** Cơ sở lý thuyết của TF-IDF N-gram và cách biến đổi văn bản thành ma trận đặc trưng số.
 
 ---
 
 ## 📦 II. ĐẦU VÀO & ĐẦU RA (INPUTS & OUTPUTS)
 
 * **Đầu vào (Inputs):**
-  - File dữ liệu sạch từ TV1: `data/processed/reviews_cleaned.xlsx`.
+  - File dữ liệu sạch `data/processed/reviews_cleaned.xlsx` từ TV1.
 * **Đầu ra (Outputs bàn giao):**
-  - Notebook hoàn chỉnh: [notebooks/01_data_exploration_eda.ipynb](../../notebooks/01_data_exploration_eda.ipynb).
-  - Module code: [src/features.py](../../src/features.py).
-  - File ma trận đặc trưng và bộ vectorizer đã fit: `models/train_test_features.joblib`, `models/text_feature_extractor.joblib`, `models/text_tfidf_vectorizer.joblib`.
-  - Artifact manifest: `models/artifact_manifest.json` và môi trường khóa tại `requirements.lock`.
-  - Tài liệu giải thích cho cả nhóm: `reports/overview_for_team.md`.
-  - Toàn bộ hình ảnh biểu đồ EDA trong `reports/figures/`.
-  - Nội dung Chương 2.1 - 2.2 và Chương 3.1 của Báo cáo.
+  - Module [src/features.py](file:///d:/Trí%20tuệ%20nhân%20tạo/HK2/Máy%20học/Project/Do_An_May_Hoc_Sentiment_Analysis/src/features.py).
+  - Notebook [01_data_exploration_eda.ipynb](file:///d:/Trí%20tuệ%20nhân%20tạo/HK2/Máy%20học/Project/Do_An_May_Hoc_Sentiment_Analysis/notebooks/01_data_exploration_eda.ipynb).
+  - 9 biểu đồ trực quan chất lượng cao trong `reports/figures/`.
+  - Artifacts đặc trưng đã đóng gói trong `models/` bàn giao cho TV3.
