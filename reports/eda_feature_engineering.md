@@ -1,24 +1,36 @@
-# Báo cáo TV2: Tổng quan dữ liệu, EDA và trích xuất đặc trưng
+# Phân tích khám phá dữ liệu và trích xuất đặc trưng cho bài toán phân loại cảm xúc đánh giá ITviec
 
-## 2.1. Tổng quan bộ dữ liệu ITviec Reviews
+## 2. Mô tả bộ dữ liệu
 
-Bộ dữ liệu sau tiền xử lý tại `data/processed/reviews_cleaned.xlsx` gồm **8.417 review** và **23 trường**, không có dòng trùng hoàn toàn. Dữ liệu bao gồm:
+### 2.1. Quy mô và cấu trúc
 
-- Thông tin định danh và doanh nghiệp: `id`, `Company Name`, `Cmt_day`.
-- Nội dung review: `Title`, `What I liked`, `Suggestions for improvement`.
-- Điểm tổng thể: `Rating` từ 1 đến 5 sao.
-- Năm điểm khía cạnh: lương và phúc lợi, đào tạo, quản lý, văn hóa, văn phòng.
-- Nội dung đã xử lý: `raw_review_text`, `clean_basic_text`, `clean_advance_text`.
-- Đặc trưng từ điển: `pos_w`, `neg_w`, `pos_e`, `neg_e`, `total_we`, `sentiment_ratio`.
-- Nhãn mục tiêu: `sentiment` gồm `Positive`, `Neutral`, `Negative`; đây là **rating-derived weak labels** được suy ra từ `Rating`, không phải nhãn vàng do con người đọc nội dung và gán.
+Bộ dữ liệu sau tiền xử lý gồm **8.417 đánh giá** và **23 trường**, thu thập từ nền tảng tuyển dụng ITviec. Các trường được chia thành năm nhóm:
 
-Dữ liệu khuyết thiếu chỉ xuất hiện ở `What I liked` (1 dòng, 0,01%) và `Suggestions for improvement` (5 dòng, 0,06%). Các cột đã tiền xử lý và cột nhãn không có giá trị khuyết thiếu. Có 6 dòng thuộc ba nhóm `clean_advance_text` trùng; một nhóm có cùng text nhưng khác weak label. Trước khi chia dữ liệu modeling, nhóm bất đồng bị loại toàn bộ và nhóm trùng cùng nhãn chỉ giữ một dòng, còn **8.413 dòng**.
+| Nhóm trường | Các trường thành phần |
+|---|---|
+| Định danh và doanh nghiệp | `id`, `Company Name`, `Cmt_day` |
+| Nội dung đánh giá | `Title`, `What I liked`, `Suggestions for improvement` |
+| Điểm đánh giá | `Rating` (thang 1–5) và năm điểm khía cạnh |
+| Văn bản đã chuẩn hóa | `raw_review_text`, `clean_basic_text`, `clean_advance_text` |
+| Đặc trưng từ điển và nhãn | `pos_w`, `neg_w`, `pos_e`, `neg_e`, `total_we`, `sentiment_ratio`, `sentiment` |
 
-## 2.2. Phân tích khám phá dữ liệu
+Năm điểm khía cạnh gồm lương và phúc lợi, đào tạo, quản lý, văn hóa doanh nghiệp và văn phòng làm việc, tất cả đều theo thang thứ bậc 1–5.
 
-### Phân bố số sao và nhãn cảm xúc
+### 2.2. Chất lượng dữ liệu
 
-| Rating | Số review |
+Giá trị khuyết thiếu chỉ xuất hiện ở hai trường nội dung với tỷ lệ không đáng kể, gồm `What I liked` (1 dòng, 0,01%) và `Suggestions for improvement` (5 dòng, 0,06%). Các trường đã chuẩn hóa và trường nhãn không có giá trị khuyết thiếu, đồng thời không tồn tại dòng trùng lặp hoàn toàn.
+
+Ở mức văn bản đã chuẩn hóa, sáu dòng thuộc ba nhóm có `clean_advance_text` giống hệt nhau. Trong đó một nhóm mang nhãn khác nhau dù nội dung đồng nhất, phản ánh mâu thuẫn nội tại của quy tắc gán nhãn. Nhóm mâu thuẫn được loại bỏ toàn bộ nhằm tránh đưa tín hiệu nhiễu vào quá trình học, các nhóm trùng cùng nhãn chỉ giữ lại một đại diện để tránh rò rỉ mẫu giữa tập huấn luyện và tập kiểm thử. Sau bước này, dữ liệu dùng cho mô hình hóa còn **8.413 dòng**.
+
+### 2.3. Bản chất của nhãn
+
+Nhãn `sentiment` nhận ba giá trị `Positive`, `Neutral` và `Negative`, được suy ra theo quy tắc ánh xạ từ `Rating`. Đây là **nhãn yếu** (weak label) sinh tự động, không phải nhãn vàng do người đọc nội dung và gán thủ công. Đặc điểm này chi phối toàn bộ cách diễn giải kết quả ở các phần sau, vì mọi trường có quan hệ hàm số với `Rating` đều tiềm ẩn nguy cơ rò rỉ nhãn.
+
+## 3.1. Phân tích khám phá dữ liệu
+
+### 3.1.1. Phân bố điểm đánh giá và nhãn cảm xúc
+
+| Rating | Số đánh giá |
 |---:|---:|
 | 1 | 124 |
 | 2 | 446 |
@@ -28,7 +40,7 @@ Dữ liệu khuyết thiếu chỉ xuất hiện ở `What I liked` (1 dòng, 0,
 
 ![Phân bố điểm đánh giá](figures/eda_rating_distribution.png)
 
-| Nhãn | Số review | Tỷ lệ |
+| Nhãn | Số đánh giá | Tỷ lệ |
 |---|---:|---:|
 | Positive | 6.208 | 73,76% |
 | Neutral | 1.639 | 19,47% |
@@ -36,9 +48,9 @@ Dữ liệu khuyết thiếu chỉ xuất hiện ở `What I liked` (1 dòng, 0,
 
 ![Phân bố nhãn cảm xúc](figures/eda_sentiment_counts.png)
 
-Lớp Positive chiếm gần ba phần tư dữ liệu và lớn gấp khoảng 10,9 lần lớp Negative. Vì vậy, Accuracy không đủ để đánh giá mô hình; các thí nghiệm tiếp theo cần ưu tiên **Macro F1** và theo dõi Recall của lớp Negative.
+Lớp Positive chiếm gần ba phần tư dữ liệu và lớn gấp khoảng 10,9 lần lớp Negative. Mức mất cân bằng này khiến Accuracy trở thành thang đo gây hiểu nhầm, vì một bộ phân loại luôn dự đoán Positive đã đạt xấp xỉ 73,8% Accuracy mà không mang giá trị sử dụng. Các thực nghiệm vì vậy lấy **Macro F1** làm thang đo chính và theo dõi thêm Recall của lớp Negative.
 
-### Độ dài nội dung review
+### 3.1.2. Độ dài nội dung đánh giá
 
 | Trường | Trung bình | Trung vị | Phân vị 95 | Phân vị 99 | Lớn nhất |
 |---|---:|---:|---:|---:|---:|
@@ -47,13 +59,13 @@ Lớp Positive chiếm gần ba phần tư dữ liệu và lớn gấp khoảng 
 
 ![Phân bố độ dài nội dung](figures/eda_text_length_distribution.png)
 
-Phân bố độ dài lệch phải rõ rệt: phần lớn review ngắn, nhưng có một số ngoại lệ rất dài. TF-IDF phù hợp với độ dài biến thiên này vì biểu diễn theo trọng số thay vì dùng số lần xuất hiện tuyệt đối.
+Phân bố độ dài lệch phải rõ rệt ở cả hai trường, với phần lớn đánh giá ngắn và một số ít ngoại lệ rất dài. Đặc điểm này ủng hộ việc dùng TF-IDF thay cho tần suất tuyệt đối, vì trọng số TF-IDF chuẩn hóa theo độ dài văn bản nên hạn chế được ảnh hưởng của các đánh giá dài bất thường.
 
-### Quan hệ giữa điểm khía cạnh và cảm xúc tổng thể
+### 3.1.3. Quan hệ giữa điểm khía cạnh và cảm xúc tổng thể
 
-Tương quan Spearman với `Rating`, theo thứ tự giảm dần:
+Hệ số tương quan Spearman được sử dụng do các điểm đánh giá thuộc thang thứ bậc.
 
-| Khía cạnh | Tương quan Spearman |
+| Khía cạnh | Tương quan Spearman với `Rating` |
 |---|---:|
 | Management cares about me | 0,7368 |
 | Salary & benefits | 0,7343 |
@@ -63,97 +75,118 @@ Tương quan Spearman với `Rating`, theo thứ tự giảm dần:
 
 ![Tương quan giữa các điểm đánh giá](figures/eda_aspect_correlation.png)
 
-Điểm trung bình của mọi khía cạnh đều giảm theo thứ tự Positive → Neutral → Negative. Chênh lệch lớn nhất tập trung ở quản lý, lương/phúc lợi và văn hóa. Đây là các tín hiệu dự báo hữu ích, nhưng **không đưa `Rating` tổng thể vào ma trận đặc trưng** vì nhãn `sentiment` được tạo trực tiếp từ `Rating`; sử dụng trường này sẽ gây rò rỉ nhãn.
+Điểm trung bình của mọi khía cạnh đều giảm đơn điệu theo thứ tự Positive, Neutral, Negative, với chênh lệch lớn nhất ở quản lý, lương và phúc lợi, văn hóa doanh nghiệp. Mặc dù mang tính dự báo cao, `Rating` tổng thể không được đưa vào ma trận đặc trưng, bởi nhãn `sentiment` là hàm xác định của chính trường này nên việc sử dụng nó sẽ tạo rò rỉ nhãn hoàn toàn.
 
 ![Điểm khía cạnh theo cảm xúc](figures/eda_aspect_by_sentiment.png)
 
-### Phân bố theo công ty và thời gian
+### 3.1.4. Phân bố theo doanh nghiệp và thời gian
 
-Dữ liệu bao phủ **180 công ty** trong giai đoạn 07/2016–05/2025. Phân bố công ty không đồng đều: FPT Software có 2.014 review (23,93%), trong khi 110/180 công ty có dưới 20 review. Insight cấp công ty vì vậy phải hiển thị số mẫu và chỉ kết luận khi đạt ngưỡng tối thiểu.
+Dữ liệu bao phủ **180 doanh nghiệp** trong khoảng thời gian từ tháng 07/2016 đến tháng 05/2025. Phân bố theo doanh nghiệp mất cân đối đáng kể, trong đó FPT Software chiếm 2.014 đánh giá tương đương 23,93% toàn bộ dữ liệu, còn 110 trên 180 doanh nghiệp có dưới 20 đánh giá. Hệ quả phương pháp luận là mọi kết luận ở cấp doanh nghiệp phải kèm theo cỡ mẫu và chỉ nên đưa ra khi đạt ngưỡng tối thiểu.
 
-![Phân bố review theo công ty và thời gian](figures/eda_company_time_distribution.png)
+![Phân bố đánh giá theo doanh nghiệp và thời gian](figures/eda_company_time_distribution.png)
 
-### Chẩn đoán chất lượng weak label và lexicon
+### 3.1.5. Chẩn đoán chất lượng nhãn yếu và độ phủ từ điển
 
-- Lexicon chỉ có ít nhất một hit trên **12,23%** review.
-- `pos_e` và `neg_e` bằng 0 trên toàn bộ 8.417 dòng, nên emoji features hiện chưa hoạt động.
+| Chỉ số chẩn đoán | Giá trị |
+|---|---|
+| Tỷ lệ đánh giá có ít nhất một từ khớp từ điển cảm xúc | 12,23% |
+| Số dòng có đặc trưng biểu tượng cảm xúc khác 0 | 0 trên 8.417 |
+| Dòng thuộc nhóm văn bản trùng lặp | 6 |
+| Nhóm văn bản trùng nhưng khác nhãn | 1 |
 
-#### Hai lỗi tiền xử lý TV2 phát hiện và trả ngược cho TV1
+Đối chiếu nhãn yếu với trường `Recommend?` cho thấy các trường hợp bất đồng đáng kể, gồm 41 đánh giá mang nhãn Negative nhưng vẫn khuyến nghị công ty, 411 đánh giá Neutral và 87 đánh giá Positive lại không khuyến nghị.
 
-Hai con số bất thường ở trên đã được truy nguyên đến `src/preprocessing.py`, kèm bằng chứng kiểm chứng trực tiếp:
+![Chẩn đoán nhãn yếu và từ điển](figures/eda_label_quality_diagnostics.png)
 
-1. **Đặc trưng emoji luôn bằng 0 (lỗi thứ tự pipeline).** `scripts/run_step1_preprocessing.py:51` tính `calc_sentiment_features` trên `clean_basic_text`, nhưng `clean_basic_text` đã gọi `process_emojis` (`src/preprocessing.py:100`) để thay emoji bằng chữ. Đến lượt đếm, `text.count(e)` không còn emoji nào để đếm. Bằng chứng: `raw_review_text` có **34 dòng chứa emoji**, nhưng `pos_e`/`neg_e` khác 0 ở **0 dòng**. Cách sửa: đếm emoji trên `raw_review_text` (hoặc trên chuỗi trước bước `process_emojis`).
+Các dấu hiệu trên không đủ để kết luận nhãn yếu sai, nhưng đủ để bác bỏ giả định xem `Rating` là chân lý tuyệt đối. Trần hiệu năng của mọi mô hình học từ tập nhãn này vì vậy bị giới hạn bởi chính độ nhiễu của quy tắc gán nhãn.
 
-2. **Từ điển cảm xúc gần như không khớp (lỗi cơ chế đối sánh).** `calc_sentiment_features` đối sánh theo *token đơn* (`w in self.positive_words`), trong khi **135/148 mục positive (91%)** và **130/148 mục negative (88%)** là cụm nhiều từ (`"bảo hiểm tốt"`, `"không có thưởng"`). Hệ quả: coverage chỉ **12,23%**; nếu đối sánh theo cụm thì coverage đạt **85,66%** trên cùng bộ dữ liệu. Cách sửa: đối sánh cụm (n-gram/regex biên từ) trước, phần còn lại mới đối sánh token đơn.
+## 3.2. Trích xuất đặc trưng
 
-Đây cũng là lý do trực tiếp khiến nhóm feature `Text + lexicon` (0,5550) **không** vượt được `Text-only` (0,5597) trong ablation bên dưới: đặc trưng lexicon hiện tại gần như là cột rỗng chứ không phải tín hiệu yếu. Sau khi TV1 sửa, ablation lexicon cần được chạy lại trước khi kết luận lexicon vô ích.
-- `Recommend?` bất đồng với weak label ở nhiều mẫu: 41 Negative vẫn recommend; 411 Neutral và 87 Positive không recommend.
-- Những dấu hiệu trên không chứng minh weak label sai, nhưng cho thấy Rating không thể được mô tả là ground truth tuyệt đối.
+### 3.2.1. Biểu diễn TF-IDF
 
-![Chẩn đoán weak label và lexicon](figures/eda_label_quality_diagnostics.png)
+Văn bản được biểu diễn bằng TF-IDF trên trường `clean_advance_text` với tham số `max_features=5000`, `ngram_range=(1, 2)`, `min_df=2` và `sublinear_tf=True`. Trọng số TF-IDF của một từ trong một văn bản được tính theo công thức:
 
-## 3.1. Phương pháp trích xuất đặc trưng
+```
+tfidf(t, d) = (1 + log tf(t, d)) × log((1 + N) / (1 + df(t))) + 1
+```
 
-### TF-IDF
+trong đó `tf(t, d)` là tần suất xuất hiện, `df(t)` là số văn bản chứa từ và `N` là tổng số văn bản. Thành phần `sublinear_tf` giảm ảnh hưởng của việc lặp từ nhiều lần trong cùng một đánh giá, còn `min_df=2` loại bỏ các từ chỉ xuất hiện một lần vốn phần lớn là lỗi chính tả.
 
-TF-IDF được fit trên `clean_advance_text` với cấu hình:
+### 3.2.2. Thiết kế thực nghiệm và phân chia dữ liệu
 
-- `max_features=5000`;
-- `ngram_range=(1, 2)`;
-- `min_df=2`;
-- `sublinear_tf=True`.
+Dữ liệu được chia phân tầng theo nhãn thành tập phát triển 80% và tập kiểm thử cuối 20% với `random_state=2026`. Tập kiểm thử cuối được khóa và không tham gia vào bất kỳ bước lựa chọn đặc trưng hay đo hiệu năng nào trong phần này, nhằm bảo toàn tính độc lập cho khâu đánh giá cuối cùng.
 
-Sau xử lý text trùng, dữ liệu được chia phân tầng thành **development 80%** và **final test 20%** bằng `random_state=2026`. Final test được khóa và TV2 không tính bất kỳ metric mô hình nào trên tập này. Mọi lựa chọn feature chỉ dùng 5-fold Stratified CV trên development; vectorizer và scaler đều được fit lại bên trong từng fold.
+Mọi so sánh đặc trưng đều thực hiện bằng 5-fold Stratified Cross-Validation trên tập phát triển. Bộ vector hóa và bộ chuẩn hóa được huấn luyện lại bên trong từng fold, tránh rò rỉ thông tin thống kê từ phần dữ liệu kiểm định sang phần huấn luyện.
 
-Logistic Regression có `class_weight='balanced'` cho kết quả CV trên development:
+### 3.2.3. Lựa chọn cấu hình n-gram
+
+Mô hình khảo sát là Logistic Regression với `class_weight='balanced'`.
 
 | Cấu hình | Macro F1 trung bình | Độ lệch chuẩn |
 |---|---:|---:|
 | Unigram `(1, 1)` | 0,5385 | 0,0117 |
-| Unigram + bigram `(1, 2)` | 0,5597 | 0,0141 |
+| Unigram và bigram `(1, 2)` | **0,5597** | 0,0141 |
 
-Cấu hình unigram + bigram cao hơn 0,0212 Macro F1 và được chọn cho bộ đặc trưng text-only bàn giao.
+![So sánh cấu hình n-gram](figures/eda_tfidf_ngram_comparison.png)
 
-![So sánh n-gram](figures/eda_tfidf_ngram_comparison.png)
+Cấu hình unigram kết hợp bigram cao hơn 0,0212 Macro F1. Khoảng dao động giữa các fold của hai cấu hình gần như tách rời nhau, do đó chênh lệch này được xem là ổn định chứ không phải dao động ngẫu nhiên. Cấu hình `(1, 2)` được chọn cho toàn bộ thực nghiệm tiếp theo, phù hợp với đặc thù tiếng Việt nơi nhiều cụm mang cảm xúc chỉ bộc lộ ở mức hai từ, chẳng hạn cấu trúc phủ định.
 
-### Ablation: mô hình học từ text hay điểm số?
+### 3.2.4. Nghiên cứu loại bỏ đặc trưng
 
-| Nhóm feature | Macro F1 CV | Độ lệch chuẩn | Vai trò |
+| Nhóm đặc trưng | Macro F1 CV | Độ lệch chuẩn | Vai trò |
 |---|---:|---:|---|
-| Aspect ratings only | 0,7388 | 0,0069 | Diagnostic/tabular upper bound |
-| Full structured hybrid | 0,7370 | 0,0122 | Diagnostic, không dùng cho demo text-only |
-| Text-only | 0,5597 | 0,0141 | **Pipeline NLP chính** |
-| Text + lexicon | 0,5550 | 0,0151 | Ablation; lexicon hiện không cải thiện |
+| Chỉ điểm khía cạnh | 0,7388 | 0,0069 | Cận trên dạng bảng, mang tính chẩn đoán |
+| Kết hợp toàn bộ | 0,7370 | 0,0122 | Chẩn đoán |
+| **Chỉ văn bản** | **0,5597** | 0,0141 | **Cấu hình chính** |
+| Văn bản và từ điển | 0,5550 | 0,0151 | Loại bỏ sau khảo sát |
 
-Aspect-only cao hơn text-only cho thấy điểm khía cạnh là shortcut rất mạnh đối với weak label tạo từ Rating. Kết quả này không chứng minh mô hình hiểu ngôn ngữ. Ngoài ra demo text-only không có năm điểm khía cạnh lúc inference. Vì vậy artifact chính chỉ chứa TF-IDF text; aspect/hybrid chỉ được giữ như thí nghiệm chẩn đoán.
+![Nghiên cứu loại bỏ đặc trưng](figures/eda_feature_ablation_cv.png)
 
-![Ablation nhóm feature trên development CV](figures/eda_feature_ablation_cv.png)
+Nhóm chỉ dùng điểm khía cạnh đạt Macro F1 cao hơn nhóm chỉ dùng văn bản khoảng 0,18, khoảng cách vượt xa độ dao động giữa các fold. Kết quả này không chứng tỏ mô hình hiểu ngôn ngữ tốt hơn, mà phản ánh việc các điểm khía cạnh là đường tắt thống kê rất mạnh dẫn tới nhãn yếu sinh từ `Rating`. Ngoài ra, bài toán đặt ra yêu cầu dự đoán cảm xúc từ văn bản tự do, trong đó năm điểm khía cạnh không tồn tại tại thời điểm suy luận. Cấu hình chính vì vậy chỉ gồm đặc trưng TF-IDF của văn bản, còn hai nhóm có chứa điểm khía cạnh được giữ lại như thí nghiệm chẩn đoán về bản chất nhãn.
 
-Ma trận text-only cuối cùng:
+Nhóm kết hợp văn bản và từ điển không cải thiện so với nhóm chỉ dùng văn bản. Khoảng dao động giữa các fold của hai nhóm chồng lấn gần như hoàn toàn, nên chênh lệch 0,0047 không có ý nghĩa phân biệt.
 
-- `X_train` (development): 6.730 × 5.000.
-- `X_test` (final test khóa): 1.683 × 5.000.
-- Nhãn development: 4.964 Positive, 1.310 Neutral, 456 Negative.
-- TV2 không báo cáo phân phối chi tiết hoặc metric mô hình trên final test ngoài việc kiểm tra contract kỹ thuật.
+### 3.2.5. Hạn chế của nhóm đặc trưng từ điển
 
-### Xử lý mất cân bằng
+Kết quả ở mục 3.2.4 cần được diễn giải cùng với hai hạn chế của bước sinh đặc trưng từ điển, cả hai đều đã được kiểm chứng trực tiếp trên dữ liệu.
 
-Hai chiến lược được bàn giao để TV3 đánh giá chéo:
+**Thứ nhất, cơ chế so khớp không tương thích với cấu trúc từ điển.** Hàm sinh đặc trưng so khớp ở mức từ đơn sau khi tách văn bản theo khoảng trắng, trong khi 135 trên 148 mục của từ điển tích cực (91%) và 130 trên 148 mục của từ điển tiêu cực (88%) là cụm nhiều từ, chẳng hạn "bảo hiểm tốt" hay "không có thưởng". Các mục này không bao giờ khớp được. Hệ quả là độ phủ chỉ đạt 12,23%, trung bình 0,16 lượt khớp trên mỗi đánh giá. Khi thay bằng cơ chế so khớp cụm ưu tiên độ dài giảm dần, độ phủ trên cùng bộ dữ liệu đạt **85,43%** với trung bình 2,37 lượt khớp, và tương quan giữa `sentiment_ratio` với `Rating` tăng từ 0,2021 lên 0,2956.
 
-1. Dùng `class_weight='balanced'` trong các mô hình hỗ trợ trọng số lớp.
-2. Áp dụng SMOTE **bên trong từng fold development**. Minh họa tạo 4.964 mẫu cho mỗi lớp, tổng cộng 14.892 mẫu; final test không được resample.
+**Thứ hai, nhóm đặc trưng biểu tượng cảm xúc không mang thông tin.** Hai trường `pos_e` và `neg_e` bằng 0 trên toàn bộ dữ liệu, do bước chuẩn hóa văn bản đã thay biểu tượng cảm xúc bằng từ ngữ tương ứng trước khi bước đếm được thực hiện. Ngoài ra, chỉ 20 trên 8.417 đánh giá (0,24%) chứa biểu tượng cảm xúc thuộc hai tập từ điển, nên trần đóng góp của nhóm đặc trưng này là không đáng kể ngay cả khi cơ chế đếm hoạt động đúng.
 
-Do dữ liệu TF-IDF có số chiều cao, SMOTE có thể tạo các vector tổng hợp khó diễn giải. Kết luận chọn chiến lược phải dựa trên Macro F1, Recall lớp Negative và ma trận nhầm lẫn, không chỉ dựa trên Accuracy.
+Thực nghiệm kiểm chứng với bộ đặc trưng từ điển đã hiệu chỉnh theo cơ chế so khớp cụm cho Macro F1 đạt 0,5583 với độ lệch chuẩn 0,0131, vẫn không vượt cấu hình chỉ dùng văn bản. Như vậy, kết luận loại bỏ nhóm đặc trưng từ điển được rút ra trên bộ đặc trưng hoạt động đúng, chứ không phải hệ quả của lỗi cài đặt.
 
-## Tệp bàn giao
+### 3.2.6. Xử lý mất cân bằng lớp
 
-- `notebooks/01_data_exploration_eda.ipynb`: notebook EDA và feature engineering đã chạy từ đầu đến cuối.
-- `src/features.py`: pipeline text/structured rõ ràng, xử lý text trùng, chia phân tầng, SMOTE và artifact contract.
-- `models/text_tfidf_vectorizer.joblib`: vectorizer text-only.
-- `models/text_feature_extractor.joblib`: extractor text-only đã fit trên development.
-- `models/train_test_features.joblib`: ma trận development/final-test, nhãn, indices, feature names và metadata.
-- `models/artifact_manifest.json`: runtime versions, dataset hash, Git SHA và checksum artifact.
-- `requirements.lock`: môi trường Python 3.11 tái lập được để đọc artifact.
-- `data/annotation/sentiment_audit_blind.csv` và `sentiment_audit_key.csv`: bộ 300 review cho hai người gán nhãn thủ công độc lập.
-- `reports/overview_for_team.md`: giải thích pipeline bằng ngôn ngữ đơn giản.
-- `reports/figures/`: chín biểu đồ EDA/feature diagnostics độ phân giải 300 dpi.
+Hai chiến lược được khảo sát cho khâu mô hình hóa:
+
+1. Sử dụng tham số `class_weight='balanced'`, gán trọng số tỷ lệ nghịch với tần suất lớp trong hàm mất mát.
+2. Sinh mẫu tổng hợp bằng SMOTE, áp dụng bên trong từng fold huấn luyện. Trên tập phát triển, SMOTE đưa cả ba lớp về 4.964 mẫu, tổng cộng 14.892 mẫu. Tập kiểm thử cuối không được tái lấy mẫu trong bất kỳ trường hợp nào.
+
+Do TF-IDF tạo không gian đặc trưng thưa và nhiều chiều, các vector tổng hợp do SMOTE sinh ra không tương ứng với văn bản có thật, làm giảm khả năng diễn giải. Việc lựa chọn giữa hai chiến lược cần dựa trên Macro F1, Recall của lớp Negative và ma trận nhầm lẫn, không dựa trên Accuracy.
+
+### 3.2.7. Ma trận đặc trưng kết quả
+
+| Thành phần | Kích thước | Phân bố nhãn |
+|---|---|---|
+| Tập phát triển | 6.730 × 5.000 | 4.964 Positive, 1.310 Neutral, 456 Negative |
+| Tập kiểm thử cuối | 1.683 × 5.000 | Khóa, chỉ kiểm tra tính hợp lệ kỹ thuật |
+
+Tỷ lệ ba lớp sau khi chia phân tầng được giữ đúng như phân bố gốc ở mục 3.1.1, xác nhận phép chia không làm lệch phân bố nhãn.
+
+## Phụ lục: Điều kiện tái lập thực nghiệm
+
+Toàn bộ số liệu trong tài liệu này được sinh lại từ đầu bằng môi trường khóa phiên bản theo `requirements.lock`, gồm Python 3.11.15, NumPy 2.4.6, pandas 3.0.5, scikit-learn 1.9.0, SciPy 1.17.1 và joblib 1.5.3.
+
+| Thành phần | Đường dẫn |
+|---|---|
+| Quy trình thực nghiệm | `notebooks/01_data_exploration_eda.ipynb` |
+| Mô-đun trích xuất đặc trưng | `src/features.py` |
+| Bộ vector hóa TF-IDF | `models/text_tfidf_vectorizer.joblib` |
+| Bộ trích xuất đã huấn luyện | `models/text_feature_extractor.joblib` |
+| Ma trận đặc trưng và nhãn | `models/train_test_features.joblib` |
+| Siêu dữ liệu và tổng kiểm tra | `models/artifact_manifest.json` |
+| Biểu đồ độ phân giải 300 dpi | `reports/figures/` |
+| Mẫu kiểm định nhãn thủ công | `data/annotation/` |
+
+Tệp `artifact_manifest.json` lưu tổng kiểm tra SHA-256 của dữ liệu nguồn và của từng tệp kết quả, cùng phiên bản thư viện tại thời điểm sinh, cho phép xác minh rằng các ma trận đặc trưng tương ứng đúng với phiên bản dữ liệu được mô tả trong tài liệu này.
