@@ -75,8 +75,18 @@ Dữ liệu bao phủ **180 công ty** trong giai đoạn 07/2016–05/2025. Ph�
 
 ### Chẩn đoán chất lượng weak label và lexicon
 
-- Lexicon chỉ có ít nhất một hit trên **12,26%** review.
+- Lexicon chỉ có ít nhất một hit trên **12,23%** review.
 - `pos_e` và `neg_e` bằng 0 trên toàn bộ 8.417 dòng, nên emoji features hiện chưa hoạt động.
+
+#### Hai lỗi tiền xử lý TV2 phát hiện và trả ngược cho TV1
+
+Hai con số bất thường ở trên đã được truy nguyên đến `src/preprocessing.py`, kèm bằng chứng kiểm chứng trực tiếp:
+
+1. **Đặc trưng emoji luôn bằng 0 (lỗi thứ tự pipeline).** `scripts/run_step1_preprocessing.py:51` tính `calc_sentiment_features` trên `clean_basic_text`, nhưng `clean_basic_text` đã gọi `process_emojis` (`src/preprocessing.py:100`) để thay emoji bằng chữ. Đến lượt đếm, `text.count(e)` không còn emoji nào để đếm. Bằng chứng: `raw_review_text` có **34 dòng chứa emoji**, nhưng `pos_e`/`neg_e` khác 0 ở **0 dòng**. Cách sửa: đếm emoji trên `raw_review_text` (hoặc trên chuỗi trước bước `process_emojis`).
+
+2. **Từ điển cảm xúc gần như không khớp (lỗi cơ chế đối sánh).** `calc_sentiment_features` đối sánh theo *token đơn* (`w in self.positive_words`), trong khi **135/148 mục positive (91%)** và **130/148 mục negative (88%)** là cụm nhiều từ (`"bảo hiểm tốt"`, `"không có thưởng"`). Hệ quả: coverage chỉ **12,23%**; nếu đối sánh theo cụm thì coverage đạt **85,66%** trên cùng bộ dữ liệu. Cách sửa: đối sánh cụm (n-gram/regex biên từ) trước, phần còn lại mới đối sánh token đơn.
+
+Đây cũng là lý do trực tiếp khiến nhóm feature `Text + lexicon` (0,5550) **không** vượt được `Text-only` (0,5597) trong ablation bên dưới: đặc trưng lexicon hiện tại gần như là cột rỗng chứ không phải tín hiệu yếu. Sau khi TV1 sửa, ablation lexicon cần được chạy lại trước khi kết luận lexicon vô ích.
 - `Recommend?` bất đồng với weak label ở nhiều mẫu: 41 Negative vẫn recommend; 411 Neutral và 87 Positive không recommend.
 - Những dấu hiệu trên không chứng minh weak label sai, nhưng cho thấy Rating không thể được mô tả là ground truth tuyệt đối.
 
@@ -99,10 +109,10 @@ Logistic Regression có `class_weight='balanced'` cho kết quả CV trên devel
 
 | Cấu hình | Macro F1 trung bình | Độ lệch chuẩn |
 |---|---:|---:|
-| Unigram `(1, 1)` | 0,5396 | 0,0073 |
-| Unigram + bigram `(1, 2)` | 0,5579 | 0,0127 |
+| Unigram `(1, 1)` | 0,5385 | 0,0117 |
+| Unigram + bigram `(1, 2)` | 0,5597 | 0,0141 |
 
-Cấu hình unigram + bigram cao hơn 0,0183 Macro F1 và được chọn cho bộ đặc trưng text-only bàn giao.
+Cấu hình unigram + bigram cao hơn 0,0212 Macro F1 và được chọn cho bộ đặc trưng text-only bàn giao.
 
 ![So sánh n-gram](figures/eda_tfidf_ngram_comparison.png)
 
@@ -111,9 +121,9 @@ Cấu hình unigram + bigram cao hơn 0,0183 Macro F1 và được chọn cho b�
 | Nhóm feature | Macro F1 CV | Độ lệch chuẩn | Vai trò |
 |---|---:|---:|---|
 | Aspect ratings only | 0,7388 | 0,0069 | Diagnostic/tabular upper bound |
-| Full structured hybrid | 0,7373 | 0,0101 | Diagnostic, không dùng cho demo text-only |
-| Text-only | 0,5579 | 0,0127 | **Pipeline NLP chính** |
-| Text + lexicon | 0,5556 | 0,0138 | Ablation; lexicon hiện không cải thiện |
+| Full structured hybrid | 0,7370 | 0,0122 | Diagnostic, không dùng cho demo text-only |
+| Text-only | 0,5597 | 0,0141 | **Pipeline NLP chính** |
+| Text + lexicon | 0,5550 | 0,0151 | Ablation; lexicon hiện không cải thiện |
 
 Aspect-only cao hơn text-only cho thấy điểm khía cạnh là shortcut rất mạnh đối với weak label tạo từ Rating. Kết quả này không chứng minh mô hình hiểu ngôn ngữ. Ngoài ra demo text-only không có năm điểm khía cạnh lúc inference. Vì vậy artifact chính chỉ chứa TF-IDF text; aspect/hybrid chỉ được giữ như thí nghiệm chẩn đoán.
 

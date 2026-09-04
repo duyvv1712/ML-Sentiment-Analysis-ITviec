@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "git_sha": "6855d0929df4bd4b369b517f535c7427e65f820b",
+  "git_branch": "feature/tv2-eda-feature-engineering",
+  "git_dirty": true,
+  "data_file": "data/processed/reviews_cleaned.xlsx",
+  "data_sha256": "772da418588c30b158b857c213170f78b4dc64d22b0a477a1be9df6ce6ca162f",
+  "requirements_lock_sha256": "b8fdee867d08c76b77ce8c8e8279493755d058d7152eedef1fdede33e0356a65",
+  "source_rows": 8417,
+  "modeling_rows": 8413,
+  "train_rows": 6730,
+  "test_rows": 1683,
+  "feature_count": 5000,
+  "runtime": {
+    "python": "3.11.15",
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.9.0",
+    "joblib": "1.5.3"
+  },
+  "feature_contract": {
+    "feature_mode": "text_only",
+    "text_column": "clean_advance_text",
+    "label_column": "sentiment",
+    "split_seed": 2026,
+    "test_size": 0.2,
+    "ngram_range": [
+      1,
+      2
+    ],
+    "max_features": 5000,
+    "min_df": 2,
+    "final_test_policy": "locked_not_evaluated_by_tv2",
+    "duplicate_audit": {
+      "input_rows": 8417,
+      "output_rows": 8413,
+      "duplicate_rows_removed": 4,
+      "conflicting_groups_removed": 1
+    }
+  },
+  "artifacts": {
+    "text_tfidf_vectorizer.joblib": {
+      "sha256": "5751004de0e19943f63b0d403440476833fc7dc0c2751722b36e1410fc27113e",
+      "bytes": 217196
+    },
+    "text_feature_extractor.joblib": {
+      "sha256": "fdfe1db7651329b12db55cbff4409ac9ad4975be32b30dfa757fc2d54fab55f8",
+      "bytes": 217310
+    },
+    "train_test_features.joblib": {
+      "sha256": "466460ba3effd7c16078751598ef693595a8c5c325315dd283d20143519d0f4c",
+      "bytes": 4055860
+    }
+  }
+}
