@@ -48,7 +48,10 @@ print(f"    ✓ Ví dụ: {df['clean_basic_text'].iloc[0][:100]} ...")
 
 # ─── 5. Trích xuất đặc trưng Lexicon ─────────────────────────────────────────
 print("\n[5/7] Trích xuất đặc trưng Lexicon ...")
-lex_feats = df['clean_basic_text'].progress_apply(tp.calc_sentiment_features)
+lex_feats = df.progress_apply(
+    lambda row: tp.calc_sentiment_features(row['clean_basic_text'], raw_text=row['raw_review_text']),
+    axis=1
+)
 lex_df = pd.DataFrame(list(lex_feats))
 for col in lex_df.columns:
     df[col] = lex_df[col].values

@@ -48,6 +48,10 @@ phúc lợi đầy đủ
 phúc lợi hấp dẫn
 bảo hiểm đầy đủ
 bảo hiểm tốt
+chế độ bảo hiểm tốt
+chế độ bảo hiểm đầy đủ
+chế độ tốt
+chế độ rõ ràng
 OT có lương
 OT ít
 phụ cấp tốt
@@ -143,6 +147,52 @@ yêu thích công việc
 recommend
 nên apply
 đáng làm việc
+tuyệt vời
+rất tốt
+khá tốt
+cực tốt
+quá tốt
+
+# --- TÍNH TỪ & TỪ CẢM XÚC ĐƠN CỐT LÕI (CORE POSITIVE UNIGRAMS & SHORT PHRASES) ---
+tốt
+đẹp
+ổn
+tạm ổn
+ổn áp
+xịn
+xịn sò
+thích
+vui
+hay
+tuyệt
+tuyệt quá
+ngon
+rộng
+rộng rãi
+sạch
+sạch sẽ
+thoáng
+thoáng mát
+chu đáo
+tử tế
+chuẩn mực
+phù hợp
+tiện
+tiện lợi
+thuận tiện
+tận tình
+hữu ích
+đầy đủ
+rõ ràng
+chất lượng
+chất lượng cao
+uy tín
+đáng giá
+thoả đáng
+thỏa đáng
+khang trang
+hiện đại
+ấm cúng
 
 # --- TỪ TIẾNG ANH PHỔ BIẾN TRONG CỘNG ĐỒNG IT ---
 friendly
@@ -166,3 +216,11 @@ good culture
 open communication
 recognition
 positive environment
+good
+great
+nice
+cool
+ok
+okay
+awesome
+excellent

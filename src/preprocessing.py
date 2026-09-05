@@ -26,15 +26,22 @@ class TextPreprocessor:
         self.positive_emojis = self._load_set_from_file(os.path.join(dict_dir, 'positive_emoji.txt'))
         self.negative_emojis = self._load_set_from_file(os.path.join(dict_dir, 'negative_emoji.txt'))
 
+        # Xác định độ dài cụm từ tối đa (theo số từ phân tách bằng khoảng trắng)
+        all_phrases = self.positive_words | self.negative_words
+        self.max_phrase_len = max((len(p.split()) for p in all_phrases), default=1)
+
     def _load_set_from_file(self, filepath: str) -> Set[str]:
         if not os.path.exists(filepath):
             return set()
         with open(filepath, 'r', encoding='utf-8') as f:
-            return {
-                line.strip().lower()
-                for line in f
-                if line.strip() and not line.strip().startswith('#')
-            }
+            result = set()
+            for line in f:
+                line_clean = line.strip().lower()
+                if line_clean and not line_clean.startswith('#'):
+                    # Chuẩn hóa khoảng trắng và gạch dưới
+                    normalized = " ".join(line_clean.replace('_', ' ').split())
+                    result.add(normalized)
+            return result
 
     def _load_dict_from_file(self, filepath: str) -> Dict[str, str]:
         if not os.path.exists(filepath):
@@ -71,6 +78,11 @@ class TextPreprocessor:
 
     def replace_teencode_and_typos(self, text: str) -> str:
         """Thay thế viết tắt, teencode, thuật ngữ IT và lỗi chính tả."""
+        # Xử lý các cụm teencode nhiều từ trước (nếu có trong từ điển teencode)
+        for k, v in self.teencode_dict.items():
+            if ' ' in k:
+                text = re.sub(r'\b' + re.escape(k) + r'\b', v, text, flags=re.IGNORECASE)
+
         words = text.split()
         normalized_words = []
         for word in words:
@@ -145,13 +157,13 @@ class TextPreprocessor:
 
         return tokenized
 
-    def calc_sentiment_features(self, text: str) -> Dict[str, float]:
+    def calc_sentiment_features(self, text: str, raw_text: str = None) -> Dict[str, float]:
         """
-        Trích xuất các thuộc tính thống kê Lexicon:
-        - pos_w, neg_w: Số từ tích cực / tiêu cực
+        Trích xuất các thuộc tính thống kê Lexicon bằng thuật toán Greedy Longest Phrase Matching:
+        - pos_w, neg_w: Số cụm từ tích cực / tiêu cực khớp trong từ điển
         - pos_e, neg_e: Số emoji tích cực / tiêu cực
-        - total_we: Tổng số từ & emoji mang cảm xúc
-        - sentiment_ratio: Tỷ lệ cân bằng giữa tích cực và tiêu cực
+        - total_we: Tổng số cụm từ & emoji mang cảm xúc
+        - sentiment_ratio: Tỷ lệ cân bằng giữa tích cực và tiêu cực (-1.0 đến +1.0)
         """
         if not isinstance(text, str) or not text.strip():
             return {
@@ -159,24 +171,58 @@ class TextPreprocessor:
                 'total_we': 0, 'sentiment_ratio': 0.0
             }
         
-        text_lower = text.lower()
-        words = text_lower.split()
+        # 1. Đếm emoji: ưu tiên chuỗi thô (raw_text hoặc text)
+        emoji_source = raw_text if (isinstance(raw_text, str) and raw_text.strip()) else text
+        pos_e = sum(emoji_source.count(e) for e in self.positive_emojis)
+        neg_e = sum(emoji_source.count(e) for e in self.negative_emojis)
         
-        pos_w = sum(1 for w in words if w in self.positive_words)
-        neg_w = sum(1 for w in words if w in self.negative_words)
-        pos_e = sum(text.count(e) for e in self.positive_emojis)
-        neg_e = sum(text.count(e) for e in self.negative_emojis)
-        
+        # Nếu văn bản đã qua clean_basic_text (emoji đã thay bằng text "tích_cực" / "tiêu_cực")
+        if pos_e == 0 and neg_e == 0:
+            pos_e = text.count('tích_cực')
+            neg_e = text.count('tiêu_cực')
+
+        # 2. Chuẩn hóa văn bản cho việc đối sánh cụm từ:
+        # Thay thế '_' thành ' ' (hỗ trợ cả text sau tách từ ViTokenizer lẫn clean_basic_text)
+        clean_text = self.normalize_unicode(text).lower()
+        clean_text = clean_text.replace('_', ' ')
+        clean_text = re.sub(r'[^\w\s]', ' ', clean_text)
+        tokens = clean_text.split()
+        n_tokens = len(tokens)
+
+        # 3. Quét cụm từ tham lam (Greedy Longest Matching):
+        # Ưu tiên khớp cụm dài nhất trước để giải quyết triệt để vấn đề phủ định (vd: "không toxic" vs "toxic")
+        pos_w = 0
+        neg_w = 0
+        i = 0
+        max_k = self.max_phrase_len
+
+        while i < n_tokens:
+            matched = False
+            for k in range(min(max_k, n_tokens - i), 0, -1):
+                phrase = " ".join(tokens[i : i + k])
+                if phrase in self.positive_words:
+                    pos_w += 1
+                    i += k
+                    matched = True
+                    break
+                elif phrase in self.negative_words:
+                    neg_w += 1
+                    i += k
+                    matched = True
+                    break
+            if not matched:
+                i += 1
+
         total_w = pos_w + neg_w
         total_e = pos_e + neg_e
         total_we = total_w + total_e
-        
+
         # Tỷ lệ cảm xúc chuẩn hóa từ -1 (tiêu cực) đến +1 (tích cực)
         if total_we > 0:
             sentiment_ratio = (pos_w + pos_e - neg_w - neg_e) / float(total_we)
         else:
             sentiment_ratio = 0.0
-            
+
         return {
             'pos_w': pos_w,
             'neg_w': neg_w,
