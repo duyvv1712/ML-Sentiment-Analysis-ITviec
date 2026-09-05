@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "git_sha": "6855d0929df4bd4b369b517f535c7427e65f820b",
+  "git_sha": "8bb34ac613c715f4761b0aec54a8e1c4445767dd",
   "git_branch": "feature/tv2-eda-feature-engineering",
   "git_dirty": true,
   "data_file": "data/processed/reviews_cleaned.xlsx",
-  "data_sha256": "772da418588c30b158b857c213170f78b4dc64d22b0a477a1be9df6ce6ca162f",
+  "data_sha256": "c4a2933135721bd8690526bd219f27d29d8ecd47ed212c530eb192b4e4c4f231",
   "requirements_lock_sha256": "b8fdee867d08c76b77ce8c8e8279493755d058d7152eedef1fdede33e0356a65",
   "source_rows": 8417,
-  "modeling_rows": 8413,
-  "train_rows": 6730,
+  "modeling_rows": 8414,
+  "train_rows": 6731,
   "test_rows": 1683,
   "feature_count": 5000,
   "runtime": {
@@ -34,23 +34,23 @@
     "final_test_policy": "locked_not_evaluated_by_tv2",
     "duplicate_audit": {
       "input_rows": 8417,
-      "output_rows": 8413,
-      "duplicate_rows_removed": 4,
+      "output_rows": 8414,
+      "duplicate_rows_removed": 3,
       "conflicting_groups_removed": 1
     }
   },
   "artifacts": {
     "text_tfidf_vectorizer.joblib": {
-      "sha256": "5751004de0e19943f63b0d403440476833fc7dc0c2751722b36e1410fc27113e",
-      "bytes": 217196
+      "sha256": "dfbb76fbf07844c5304ff09e821e71f08a9ed5261f3e61c5c5b99f2d14ed6a0e",
+      "bytes": 219272
     },
     "text_feature_extractor.joblib": {
-      "sha256": "fdfe1db7651329b12db55cbff4409ac9ad4975be32b30dfa757fc2d54fab55f8",
-      "bytes": 217310
+      "sha256": "588648f701b0efd25b9e4684af7c18491c1baf41d7e75f75049fd432507252c4",
+      "bytes": 219386
     },
     "train_test_features.joblib": {
-      "sha256": "466460ba3effd7c16078751598ef693595a8c5c325315dd283d20143519d0f4c",
-      "bytes": 4055860
+      "sha256": "3f8dd74bf21d15116c84c69c496bffad0eca10dbea726ff9a5f077019ee2eea2",
+      "bytes": 4407696
     }
   }
 }

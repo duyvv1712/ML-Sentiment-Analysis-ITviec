@@ -52,22 +52,20 @@
 
 ---
 
-## ✅ III. KẾT QUẢ THỰC TẾ (cập nhật 04/09/2026)
+## ✅ III. KẾT QUẢ THỰC TẾ (cập nhật 05/09/2026, chạy lại trên dataset lexicon v2)
 
 | Hạng mục | Kết quả |
 | :--- | :--- |
-| Dữ liệu đầu vào | 8.417 review / 23 cột; sau khử trùng lặp còn **8.413** dòng modeling |
+| Dữ liệu đầu vào | 8.417 review / 23 cột, sau khử trùng lặp còn **8.414** dòng modeling |
 | Phân bố nhãn | Positive 73,76% · Neutral 19,47% · Negative 6,77% |
-| Split | Stratified 80/20, `random_state=2026` → development **6.730** / final test **1.683** (khóa, TV2 không đo metric) |
+| Split | Stratified 80/20, `random_state=2026` → development **6.731** / final test **1.683** (khóa, TV2 không đo metric) |
 | Cấu hình TF-IDF chọn theo CV | `ngram_range=(1,2)`, `max_features=5000`, `min_df=2`, `sublinear_tf=True` |
-| CV Macro F1 (development, LogReg balanced) | unigram 0,5385 · **unigram+bigram 0,5597** |
-| Ablation | Aspect-only 0,7388 · Hybrid 0,7370 · **Text-only 0,5597** · Text+lexicon 0,5550 |
+| CV Macro F1 (development, LogReg balanced) | unigram 0,5569 · **unigram+bigram 0,5722** |
+| Ablation | Hybrid 0,7492 · Aspect-only 0,7374 · Text+lexicon 0,5775 · **Text-only 0,5722** |
 | Biểu đồ | 9 file PNG 300 DPI tại `reports/figures/` |
 | Artifacts bàn giao TV3 | `text_tfidf_vectorizer.joblib`, `text_feature_extractor.joblib`, `train_test_features.joblib`, `artifact_manifest.json` |
 | Kiểm thử | `pytest tests/` → 11 passed |
 
 **Lưu ý bàn giao cho TV3:** artifact chính là **text-only** (khớp web demo chỉ nhập văn bản). Nhóm feature điểm khía cạnh chỉ là thí nghiệm chẩn đoán, không dùng cho mô hình bàn giao. SMOTE phải áp dụng **bên trong từng fold CV**, không cân bằng trước khi chia.
 
-**Hai lỗi trả ngược cho TV1** (chi tiết + bằng chứng ở `reports/eda_feature_engineering.md`):
-1. `pos_e`/`neg_e` luôn bằng 0 do đếm emoji sau khi `process_emojis` đã thay emoji bằng chữ.
-2. Lexicon coverage chỉ 12,23% do đối sánh token đơn trong khi ~90% mục từ điển là cụm nhiều từ (đối sánh cụm sẽ đạt 85,66%).
+**Cập nhật 05/09/2026:** hai lỗi lexicon đã được xử lý ở pipeline tiền xử lý (greedy phrase matching, đếm emoji trên văn bản thô). Coverage 12,23% → **98,87%**, emoji 0 → 20 dòng. Toàn bộ artifacts và biểu đồ đã chạy lại trên dataset mới, Macro F1 text-only tăng 0,5597 → **0,5722**. Nhóm Text+lexicon lần đầu vượt Text-only (0,5775 so với 0,5722), tuy chênh lệch vẫn nằm trong dao động giữa các fold nên cấu hình chính giữ nguyên dạng chỉ văn bản.

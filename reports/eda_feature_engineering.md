@@ -20,7 +20,7 @@ Năm điểm khía cạnh gồm lương và phúc lợi, đào tạo, quản lý
 
 Giá trị khuyết thiếu chỉ xuất hiện ở hai trường nội dung với tỷ lệ không đáng kể, gồm `What I liked` (1 dòng, 0,01%) và `Suggestions for improvement` (5 dòng, 0,06%). Các trường đã chuẩn hóa và trường nhãn không có giá trị khuyết thiếu, đồng thời không tồn tại dòng trùng lặp hoàn toàn.
 
-Ở mức văn bản đã chuẩn hóa, sáu dòng thuộc ba nhóm có `clean_advance_text` giống hệt nhau. Trong đó một nhóm mang nhãn khác nhau dù nội dung đồng nhất, phản ánh mâu thuẫn nội tại của quy tắc gán nhãn. Nhóm mâu thuẫn được loại bỏ toàn bộ nhằm tránh đưa tín hiệu nhiễu vào quá trình học, các nhóm trùng cùng nhãn chỉ giữ lại một đại diện để tránh rò rỉ mẫu giữa tập huấn luyện và tập kiểm thử. Sau bước này, dữ liệu dùng cho mô hình hóa còn **8.413 dòng**.
+Ở mức văn bản đã chuẩn hóa, bốn dòng thuộc các nhóm có `clean_advance_text` giống hệt nhau. Trong đó một nhóm mang nhãn khác nhau dù nội dung đồng nhất, phản ánh mâu thuẫn nội tại của quy tắc gán nhãn. Nhóm mâu thuẫn được loại bỏ toàn bộ nhằm tránh đưa tín hiệu nhiễu vào quá trình học, các nhóm trùng cùng nhãn chỉ giữ lại một đại diện để tránh rò rỉ mẫu giữa tập huấn luyện và tập kiểm thử. Sau bước này, dữ liệu dùng cho mô hình hóa còn **8.414 dòng**.
 
 ### 2.3. Bản chất của nhãn
 
@@ -89,9 +89,9 @@ Dữ liệu bao phủ **180 doanh nghiệp** trong khoảng thời gian từ th�
 
 | Chỉ số chẩn đoán | Giá trị |
 |---|---|
-| Tỷ lệ đánh giá có ít nhất một từ khớp từ điển cảm xúc | 12,23% |
-| Số dòng có đặc trưng biểu tượng cảm xúc khác 0 | 0 trên 8.417 |
-| Dòng thuộc nhóm văn bản trùng lặp | 6 |
+| Tỷ lệ đánh giá có ít nhất một cụm khớp từ điển cảm xúc | 98,87% |
+| Số dòng có đặc trưng biểu tượng cảm xúc khác 0 | 20 trên 8.417 |
+| Dòng thuộc nhóm văn bản trùng lặp | 4 |
 | Nhóm văn bản trùng nhưng khác nhãn | 1 |
 
 Đối chiếu nhãn yếu với trường `Recommend?` cho thấy các trường hợp bất đồng đáng kể, gồm 41 đánh giá mang nhãn Negative nhưng vẫn khuyến nghị công ty, 411 đánh giá Neutral và 87 đánh giá Positive lại không khuyến nghị.
@@ -124,44 +124,44 @@ Mô hình khảo sát là Logistic Regression với `class_weight='balanced'`.
 
 | Cấu hình | Macro F1 trung bình | Độ lệch chuẩn |
 |---|---:|---:|
-| Unigram `(1, 1)` | 0,5385 | 0,0117 |
-| Unigram và bigram `(1, 2)` | **0,5597** | 0,0141 |
+| Unigram `(1, 1)` | 0,5569 | 0,0120 |
+| Unigram và bigram `(1, 2)` | **0,5722** | 0,0131 |
 
 ![So sánh cấu hình n-gram](figures/eda_tfidf_ngram_comparison.png)
 
-Cấu hình unigram kết hợp bigram cao hơn 0,0212 Macro F1. Khoảng dao động giữa các fold của hai cấu hình gần như tách rời nhau, do đó chênh lệch này được xem là ổn định chứ không phải dao động ngẫu nhiên. Cấu hình `(1, 2)` được chọn cho toàn bộ thực nghiệm tiếp theo, phù hợp với đặc thù tiếng Việt nơi nhiều cụm mang cảm xúc chỉ bộc lộ ở mức hai từ, chẳng hạn cấu trúc phủ định.
+Cấu hình unigram kết hợp bigram cao hơn 0,0153 Macro F1. Khoảng dao động giữa các fold của hai cấu hình gần như tách rời nhau, do đó chênh lệch này được xem là ổn định chứ không phải dao động ngẫu nhiên. Cấu hình `(1, 2)` được chọn cho toàn bộ thực nghiệm tiếp theo, phù hợp với đặc thù tiếng Việt nơi nhiều cụm mang cảm xúc chỉ bộc lộ ở mức hai từ, chẳng hạn cấu trúc phủ định.
 
 ### 3.2.4. Nghiên cứu loại bỏ đặc trưng
 
 | Nhóm đặc trưng | Macro F1 CV | Độ lệch chuẩn | Vai trò |
 |---|---:|---:|---|
-| Chỉ điểm khía cạnh | 0,7388 | 0,0069 | Cận trên dạng bảng, mang tính chẩn đoán |
-| Kết hợp toàn bộ | 0,7370 | 0,0122 | Chẩn đoán |
-| **Chỉ văn bản** | **0,5597** | 0,0141 | **Cấu hình chính** |
-| Văn bản và từ điển | 0,5550 | 0,0151 | Loại bỏ sau khảo sát |
+| Kết hợp toàn bộ | 0,7492 | 0,0062 | Cận trên dạng bảng, mang tính chẩn đoán |
+| Chỉ điểm khía cạnh | 0,7374 | 0,0124 | Chẩn đoán |
+| Văn bản và từ điển | 0,5775 | 0,0158 | Hướng khảo sát cho khâu mô hình hóa |
+| **Chỉ văn bản** | **0,5722** | 0,0131 | **Cấu hình chính** |
 
 ![Nghiên cứu loại bỏ đặc trưng](figures/eda_feature_ablation_cv.png)
 
-Nhóm chỉ dùng điểm khía cạnh đạt Macro F1 cao hơn nhóm chỉ dùng văn bản khoảng 0,18, khoảng cách vượt xa độ dao động giữa các fold. Kết quả này không chứng tỏ mô hình hiểu ngôn ngữ tốt hơn, mà phản ánh việc các điểm khía cạnh là đường tắt thống kê rất mạnh dẫn tới nhãn yếu sinh từ `Rating`. Ngoài ra, bài toán đặt ra yêu cầu dự đoán cảm xúc từ văn bản tự do, trong đó năm điểm khía cạnh không tồn tại tại thời điểm suy luận. Cấu hình chính vì vậy chỉ gồm đặc trưng TF-IDF của văn bản, còn hai nhóm có chứa điểm khía cạnh được giữ lại như thí nghiệm chẩn đoán về bản chất nhãn.
+Hai nhóm có chứa điểm khía cạnh đạt Macro F1 cao hơn nhóm chỉ dùng văn bản khoảng 0,17, khoảng cách vượt xa độ dao động giữa các fold. Kết quả này không chứng tỏ mô hình hiểu ngôn ngữ tốt hơn, mà phản ánh việc các điểm khía cạnh là đường tắt thống kê rất mạnh dẫn tới nhãn yếu sinh từ `Rating`. Ngoài ra, bài toán đặt ra yêu cầu dự đoán cảm xúc từ văn bản tự do, trong đó năm điểm khía cạnh không tồn tại tại thời điểm suy luận. Cấu hình chính vì vậy chỉ gồm đặc trưng TF-IDF của văn bản, còn hai nhóm có chứa điểm khía cạnh được giữ lại như thí nghiệm chẩn đoán về bản chất nhãn.
 
-Nhóm kết hợp văn bản và từ điển không cải thiện so với nhóm chỉ dùng văn bản. Khoảng dao động giữa các fold của hai nhóm chồng lấn gần như hoàn toàn, nên chênh lệch 0,0047 không có ý nghĩa phân biệt.
+Nhóm kết hợp văn bản và từ điển cao hơn nhóm chỉ dùng văn bản 0,0053 Macro F1. Khác với điểm khía cạnh, các đặc trưng từ điển được tính trực tiếp từ văn bản nên vẫn khả dụng tại thời điểm suy luận. Tuy nhiên khoảng dao động giữa các fold của hai nhóm chồng lấn gần như hoàn toàn, nghĩa là chênh lệch này chưa đủ bằng chứng thống kê. Theo nguyên tắc chọn mô hình đơn giản hơn khi không có khác biệt có ý nghĩa, cấu hình chính giữ nguyên dạng chỉ văn bản, đồng thời nhóm kết hợp được ghi nhận như một hướng đáng khảo sát lại ở khâu mô hình hóa với các thuật toán khác.
 
-### 3.2.5. Hạn chế của nhóm đặc trưng từ điển
+### 3.2.5. Đặc điểm của nhóm đặc trưng từ điển
 
-Kết quả ở mục 3.2.4 cần được diễn giải cùng với hai hạn chế của bước sinh đặc trưng từ điển, cả hai đều đã được kiểm chứng trực tiếp trên dữ liệu.
+Nhóm đặc trưng từ điển gồm số cụm mang cảm xúc tích cực, số cụm tiêu cực, số biểu tượng cảm xúc mỗi loại, tổng số tín hiệu và tỷ lệ cân bằng `sentiment_ratio` chuẩn hóa trong khoảng từ -1 đến 1.
 
-**Thứ nhất, cơ chế so khớp không tương thích với cấu trúc từ điển.** Hàm sinh đặc trưng so khớp ở mức từ đơn sau khi tách văn bản theo khoảng trắng, trong khi 135 trên 148 mục của từ điển tích cực (91%) và 130 trên 148 mục của từ điển tiêu cực (88%) là cụm nhiều từ, chẳng hạn "bảo hiểm tốt" hay "không có thưởng". Các mục này không bao giờ khớp được. Hệ quả là độ phủ chỉ đạt 12,23%, trung bình 0,16 lượt khớp trên mỗi đánh giá. Khi thay bằng cơ chế so khớp cụm ưu tiên độ dài giảm dần, độ phủ trên cùng bộ dữ liệu đạt **85,43%** với trung bình 2,37 lượt khớp, và tương quan giữa `sentiment_ratio` với `Rating` tăng từ 0,2021 lên 0,2956.
+Cơ chế sinh đặc trưng dùng thuật toán so khớp cụm tham lam theo độ dài giảm dần. Cách này cần thiết vì phần lớn mục từ điển là cụm nhiều từ, chẳng hạn "bảo hiểm tốt" hay "không có thưởng", nên so khớp ở mức từ đơn sẽ bỏ sót gần như toàn bộ. Việc ưu tiên cụm dài nhất còn xử lý được cấu trúc phủ định, trong đó "không có thưởng" phải được tính là một tín hiệu tiêu cực thay vì tách thành từ trung tính "không" và từ tích cực "thưởng". Với cơ chế này, độ phủ đạt 98,87% số đánh giá.
 
-**Thứ hai, nhóm đặc trưng biểu tượng cảm xúc không mang thông tin.** Hai trường `pos_e` và `neg_e` bằng 0 trên toàn bộ dữ liệu, do bước chuẩn hóa văn bản đã thay biểu tượng cảm xúc bằng từ ngữ tương ứng trước khi bước đếm được thực hiện. Ngoài ra, chỉ 20 trên 8.417 đánh giá (0,24%) chứa biểu tượng cảm xúc thuộc hai tập từ điển, nên trần đóng góp của nhóm đặc trưng này là không đáng kể ngay cả khi cơ chế đếm hoạt động đúng.
+Đặc trưng biểu tượng cảm xúc được đếm trên văn bản thô trước mọi phép chuẩn hóa, do bước làm sạch thay biểu tượng bằng từ ngữ tương ứng. Nhóm đặc trưng này có ảnh hưởng giới hạn, vì chỉ 20 trên 8.417 đánh giá (0,24%) chứa biểu tượng cảm xúc thuộc hai tập từ điển.
 
-Thực nghiệm kiểm chứng với bộ đặc trưng từ điển đã hiệu chỉnh theo cơ chế so khớp cụm cho Macro F1 đạt 0,5583 với độ lệch chuẩn 0,0131, vẫn không vượt cấu hình chỉ dùng văn bản. Như vậy, kết luận loại bỏ nhóm đặc trưng từ điển được rút ra trên bộ đặc trưng hoạt động đúng, chứ không phải hệ quả của lỗi cài đặt.
+Trung bình mỗi đánh giá khớp 5,16 cụm mang cảm xúc. Tương quan Spearman giữa `sentiment_ratio` và `Rating` đạt 0,3450, thấp hơn đáng kể so với mức 0,54 đến 0,74 của các điểm khía cạnh ở mục 3.1.3. Tín hiệu từ điển vì vậy đi cùng chiều với nhãn nhưng không đủ mạnh để thay thế biểu diễn văn bản. Điều này nhất quán với kết quả ở mục 3.2.4, nơi nhóm kết hợp chỉ nhỉnh hơn nhóm chỉ văn bản trong phạm vi dao động giữa các fold.
 
 ### 3.2.6. Xử lý mất cân bằng lớp
 
 Hai chiến lược được khảo sát cho khâu mô hình hóa:
 
 1. Sử dụng tham số `class_weight='balanced'`, gán trọng số tỷ lệ nghịch với tần suất lớp trong hàm mất mát.
-2. Sinh mẫu tổng hợp bằng SMOTE, áp dụng bên trong từng fold huấn luyện. Trên tập phát triển, SMOTE đưa cả ba lớp về 4.964 mẫu, tổng cộng 14.892 mẫu. Tập kiểm thử cuối không được tái lấy mẫu trong bất kỳ trường hợp nào.
+2. Sinh mẫu tổng hợp bằng SMOTE, áp dụng bên trong từng fold huấn luyện. Trên tập phát triển, SMOTE đưa cả ba lớp về 4.965 mẫu, tổng cộng 14.895 mẫu. Tập kiểm thử cuối không được tái lấy mẫu trong bất kỳ trường hợp nào.
 
 Do TF-IDF tạo không gian đặc trưng thưa và nhiều chiều, các vector tổng hợp do SMOTE sinh ra không tương ứng với văn bản có thật, làm giảm khả năng diễn giải. Việc lựa chọn giữa hai chiến lược cần dựa trên Macro F1, Recall của lớp Negative và ma trận nhầm lẫn, không dựa trên Accuracy.
 
@@ -169,7 +169,7 @@ Do TF-IDF tạo không gian đặc trưng thưa và nhiều chiều, các vector
 
 | Thành phần | Kích thước | Phân bố nhãn |
 |---|---|---|
-| Tập phát triển | 6.730 × 5.000 | 4.964 Positive, 1.310 Neutral, 456 Negative |
+| Tập phát triển | 6.731 × 5.000 | 4.965 Positive, 1.310 Neutral, 456 Negative |
 | Tập kiểm thử cuối | 1.683 × 5.000 | Khóa, chỉ kiểm tra tính hợp lệ kỹ thuật |
 
 Tỷ lệ ba lớp sau khi chia phân tầng được giữ đúng như phân bố gốc ở mục 3.1.1, xác nhận phép chia không làm lệch phân bố nhãn.
