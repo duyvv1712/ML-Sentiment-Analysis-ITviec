@@ -262,3 +262,74 @@ not great
 slow
 poor
 bad
+
+# --- TỪ VỰNG BỔ SUNG ĐỒNG BỘ TỪ DỰ ÁN NLP ---
+dở
+ức chế
+bực
+bực mình
+mệt
+chưa có
+không có
+quịt lương
+cắt giảm
+sa thải
+đuổi việc
+ép buộc
+bắt ép
+ot nhiều
+làm thêm giờ nhiều
+quá tải
+overload
+thiếu quy trình
+đãi ngộ kém
+thưởng thấp
+sếp tồi
+sếp tệ
+quản lý yếu
+bất cập
+hạn chế
+bảo thủ
+drama
+lục đục
+chia rẽ
+đấu đá
+ma cũ bắt nạt ma mới
+hứa lèo
+bánh vẽ
+nói mồm
+thiệt thòi
+hẹp hòi
+khắt khe
+tù túng
+nhàm chán
+lãng phí
+rối rắm
+phức tạp
+cồng kềnh
+nóng
+hơi chật
+chật chội
+ồn ào
+bụi bặm
+xa xôi
+khó khăn
+cực
+khổ
+thấp
+nói xấu
+lừa
+chia bè phái
+mất thời gian
+khủng khiếp
+ít chia sẻ
+không chính xác
+quá gần
+te
+kem
+toi
+chan
+ap luc
+met moi
+that vong
+bat cong
