@@ -52,7 +52,7 @@
 
 ---
 
-## ✅ III. KẾT QUẢ THỰC TẾ (cập nhật 05/09/2026, chạy lại trên dataset lexicon v2)
+## ✅ III. KẾT QUẢ THỰC TẾ (cập nhật 08/09/2026, chạy lại trên dataset lexicon hợp nhất)
 
 | Hạng mục | Kết quả |
 | :--- | :--- |
@@ -61,11 +61,11 @@
 | Split | Stratified 80/20, `random_state=2026` → development **6.731** / final test **1.683** (khóa, TV2 không đo metric) |
 | Cấu hình TF-IDF chọn theo CV | `ngram_range=(1,2)`, `max_features=5000`, `min_df=2`, `sublinear_tf=True` |
 | CV Macro F1 (development, LogReg balanced) | unigram 0,5569 · **unigram+bigram 0,5722** |
-| Ablation | Hybrid 0,7492 · Aspect-only 0,7374 · Text+lexicon 0,5775 · **Text-only 0,5722** |
+| Ablation | Hybrid 0,7500 · Aspect-only 0,7374 · Text+lexicon 0,5819 · **Text-only 0,5722** |
 | Biểu đồ | 9 file PNG 300 DPI tại `reports/figures/` |
 | Artifacts bàn giao TV3 | `text_tfidf_vectorizer.joblib`, `text_feature_extractor.joblib`, `train_test_features.joblib`, `artifact_manifest.json` |
-| Kiểm thử | `pytest tests/` → 11 passed |
+| Kiểm thử | `pytest tests/` → 18 passed |
 
 **Lưu ý bàn giao cho TV3:** artifact chính là **text-only** (khớp web demo chỉ nhập văn bản). Nhóm feature điểm khía cạnh chỉ là thí nghiệm chẩn đoán, không dùng cho mô hình bàn giao. SMOTE phải áp dụng **bên trong từng fold CV**, không cân bằng trước khi chia.
 
-**Cập nhật 05/09/2026:** hai lỗi lexicon đã được xử lý ở pipeline tiền xử lý (greedy phrase matching, đếm emoji trên văn bản thô). Coverage 12,23% → **98,87%**, emoji 0 → 20 dòng. Toàn bộ artifacts và biểu đồ đã chạy lại trên dataset mới, Macro F1 text-only tăng 0,5597 → **0,5722**. Nhóm Text+lexicon lần đầu vượt Text-only (0,5775 so với 0,5722), tuy chênh lệch vẫn nằm trong dao động giữa các fold nên cấu hình chính giữ nguyên dạng chỉ văn bản.
+**Cập nhật 08/09/2026:** bộ từ điển cảm xúc được hợp nhất ở pipeline tiền xử lý, coverage tăng 98,87% → **99,75%** và trung bình mỗi đánh giá khớp 5,16 → **6,84** cụm. Dataset mới chỉ thay đổi bốn trường đặc trưng từ điển (`pos_w`, `neg_w`, `total_we`, `sentiment_ratio`), trường `clean_advance_text` và nhãn giữ nguyên, nên ma trận đặc trưng text-only và Macro F1 **0,5722** không đổi. Phần chịu ảnh hưởng là nghiên cứu loại bỏ đặc trưng, trong đó Text+lexicon tăng 0,5775 → **0,5819** và Hybrid tăng 0,7492 → **0,7500**. Chênh lệch giữa Text+lexicon và Text-only vẫn nằm trong dao động giữa các fold nên cấu hình chính giữ nguyên dạng chỉ văn bản.

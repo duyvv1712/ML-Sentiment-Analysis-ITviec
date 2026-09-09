@@ -89,7 +89,7 @@ Dữ liệu bao phủ **180 doanh nghiệp** trong khoảng thời gian từ th�
 
 | Chỉ số chẩn đoán | Giá trị |
 |---|---|
-| Tỷ lệ đánh giá có ít nhất một cụm khớp từ điển cảm xúc | 98,87% |
+| Tỷ lệ đánh giá có ít nhất một cụm khớp từ điển cảm xúc | 99,75% |
 | Số dòng có đặc trưng biểu tượng cảm xúc khác 0 | 20 trên 8.417 |
 | Dòng thuộc nhóm văn bản trùng lặp | 4 |
 | Nhóm văn bản trùng nhưng khác nhãn | 1 |
@@ -135,26 +135,26 @@ Cấu hình unigram kết hợp bigram cao hơn 0,0153 Macro F1. Khoảng dao đ
 
 | Nhóm đặc trưng | Macro F1 CV | Độ lệch chuẩn | Vai trò |
 |---|---:|---:|---|
-| Kết hợp toàn bộ | 0,7492 | 0,0062 | Cận trên dạng bảng, mang tính chẩn đoán |
+| Kết hợp toàn bộ | 0,7500 | 0,0088 | Cận trên dạng bảng, mang tính chẩn đoán |
 | Chỉ điểm khía cạnh | 0,7374 | 0,0124 | Chẩn đoán |
-| Văn bản và từ điển | 0,5775 | 0,0158 | Hướng khảo sát cho khâu mô hình hóa |
+| Văn bản và từ điển | 0,5819 | 0,0166 | Hướng khảo sát cho khâu mô hình hóa |
 | **Chỉ văn bản** | **0,5722** | 0,0131 | **Cấu hình chính** |
 
 ![Nghiên cứu loại bỏ đặc trưng](figures/eda_feature_ablation_cv.png)
 
 Hai nhóm có chứa điểm khía cạnh đạt Macro F1 cao hơn nhóm chỉ dùng văn bản khoảng 0,17, khoảng cách vượt xa độ dao động giữa các fold. Kết quả này không chứng tỏ mô hình hiểu ngôn ngữ tốt hơn, mà phản ánh việc các điểm khía cạnh là đường tắt thống kê rất mạnh dẫn tới nhãn yếu sinh từ `Rating`. Ngoài ra, bài toán đặt ra yêu cầu dự đoán cảm xúc từ văn bản tự do, trong đó năm điểm khía cạnh không tồn tại tại thời điểm suy luận. Cấu hình chính vì vậy chỉ gồm đặc trưng TF-IDF của văn bản, còn hai nhóm có chứa điểm khía cạnh được giữ lại như thí nghiệm chẩn đoán về bản chất nhãn.
 
-Nhóm kết hợp văn bản và từ điển cao hơn nhóm chỉ dùng văn bản 0,0053 Macro F1. Khác với điểm khía cạnh, các đặc trưng từ điển được tính trực tiếp từ văn bản nên vẫn khả dụng tại thời điểm suy luận. Tuy nhiên khoảng dao động giữa các fold của hai nhóm chồng lấn gần như hoàn toàn, nghĩa là chênh lệch này chưa đủ bằng chứng thống kê. Theo nguyên tắc chọn mô hình đơn giản hơn khi không có khác biệt có ý nghĩa, cấu hình chính giữ nguyên dạng chỉ văn bản, đồng thời nhóm kết hợp được ghi nhận như một hướng đáng khảo sát lại ở khâu mô hình hóa với các thuật toán khác.
+Nhóm kết hợp văn bản và từ điển cao hơn nhóm chỉ dùng văn bản 0,0097 Macro F1. Khác với điểm khía cạnh, các đặc trưng từ điển được tính trực tiếp từ văn bản nên vẫn khả dụng tại thời điểm suy luận. Tuy nhiên khoảng dao động giữa các fold của hai nhóm chồng lấn gần như hoàn toàn, nghĩa là chênh lệch này chưa đủ bằng chứng thống kê. Theo nguyên tắc chọn mô hình đơn giản hơn khi không có khác biệt có ý nghĩa, cấu hình chính giữ nguyên dạng chỉ văn bản, đồng thời nhóm kết hợp được ghi nhận như một hướng đáng khảo sát lại ở khâu mô hình hóa với các thuật toán khác.
 
 ### 3.2.5. Đặc điểm của nhóm đặc trưng từ điển
 
 Nhóm đặc trưng từ điển gồm số cụm mang cảm xúc tích cực, số cụm tiêu cực, số biểu tượng cảm xúc mỗi loại, tổng số tín hiệu và tỷ lệ cân bằng `sentiment_ratio` chuẩn hóa trong khoảng từ -1 đến 1.
 
-Cơ chế sinh đặc trưng dùng thuật toán so khớp cụm tham lam theo độ dài giảm dần. Cách này cần thiết vì phần lớn mục từ điển là cụm nhiều từ, chẳng hạn "bảo hiểm tốt" hay "không có thưởng", nên so khớp ở mức từ đơn sẽ bỏ sót gần như toàn bộ. Việc ưu tiên cụm dài nhất còn xử lý được cấu trúc phủ định, trong đó "không có thưởng" phải được tính là một tín hiệu tiêu cực thay vì tách thành từ trung tính "không" và từ tích cực "thưởng". Với cơ chế này, độ phủ đạt 98,87% số đánh giá.
+Cơ chế sinh đặc trưng dùng thuật toán so khớp cụm tham lam theo độ dài giảm dần. Cách này cần thiết vì phần lớn mục từ điển là cụm nhiều từ, chẳng hạn "bảo hiểm tốt" hay "không có thưởng", nên so khớp ở mức từ đơn sẽ bỏ sót gần như toàn bộ. Việc ưu tiên cụm dài nhất còn xử lý được cấu trúc phủ định, trong đó "không có thưởng" phải được tính là một tín hiệu tiêu cực thay vì tách thành từ trung tính "không" và từ tích cực "thưởng". Với cơ chế này, độ phủ đạt 99,75% số đánh giá.
 
 Đặc trưng biểu tượng cảm xúc được đếm trên văn bản thô trước mọi phép chuẩn hóa, do bước làm sạch thay biểu tượng bằng từ ngữ tương ứng. Nhóm đặc trưng này có ảnh hưởng giới hạn, vì chỉ 20 trên 8.417 đánh giá (0,24%) chứa biểu tượng cảm xúc thuộc hai tập từ điển.
 
-Trung bình mỗi đánh giá khớp 5,16 cụm mang cảm xúc. Tương quan Spearman giữa `sentiment_ratio` và `Rating` đạt 0,3450, thấp hơn đáng kể so với mức 0,54 đến 0,74 của các điểm khía cạnh ở mục 3.1.3. Tín hiệu từ điển vì vậy đi cùng chiều với nhãn nhưng không đủ mạnh để thay thế biểu diễn văn bản. Điều này nhất quán với kết quả ở mục 3.2.4, nơi nhóm kết hợp chỉ nhỉnh hơn nhóm chỉ văn bản trong phạm vi dao động giữa các fold.
+Trung bình mỗi đánh giá khớp 6,84 cụm mang cảm xúc. Tương quan Spearman giữa `sentiment_ratio` và `Rating` đạt 0,3551, thấp hơn đáng kể so với mức 0,54 đến 0,74 của các điểm khía cạnh ở mục 3.1.3. Tín hiệu từ điển vì vậy đi cùng chiều với nhãn nhưng không đủ mạnh để thay thế biểu diễn văn bản. Điều này nhất quán với kết quả ở mục 3.2.4, nơi nhóm kết hợp chỉ nhỉnh hơn nhóm chỉ văn bản trong phạm vi dao động giữa các fold.
 
 ### 3.2.6. Xử lý mất cân bằng lớp
 
