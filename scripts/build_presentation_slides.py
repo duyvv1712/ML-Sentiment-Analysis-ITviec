@@ -186,7 +186,7 @@ def load_metrics():
 # --------------------------------------------------------------------------- slides
 def s01_cover(prs):
     s = new_slide(prs, 1, "", "", 20,
-                  "Chào Hội đồng. Giới thiệu đề tài, nhóm và GVHD. Nêu nhanh: 8.417 review ITviec, "
+                  "Kính chào Thầy Cáp Phạm Đình Thăng cùng thầy cô và các bạn. Giới thiệu đề tài và nhóm. Nêu nhanh: 8.417 review ITviec, "
                   "phân loại 3 lớp cảm xúc, có demo web. (~20s)")
     # decorative "token grid" motif on the right
     import random
@@ -206,11 +206,12 @@ def s01_cover(prs):
     text(s, MX, 3.75, 8, 0.8,
          "Sentiment Analysis 3 lớp (Negative · Neutral · Positive) với TF-IDF và các mô hình Machine Learning cổ điển",
          size=18, color=MUTED)
-    card(s, MX, 4.95, 8.2, 1.65)
+    card(s, MX, 4.75, 8.2, 1.95)
     text(s, MX + 0.3, 5.1, 7.6, 0.35, "GIẢNG VIÊN HƯỚNG DẪN", size=11, color=BLUE, bold=True, font=MONO)
-    text(s, MX + 0.3, 5.42, 7.6, 0.35, "[Điền tên GVHD]", size=16, bold=True)
-    text(s, MX + 0.3, 5.85, 7.6, 0.3, "NHÓM THỰC HIỆN", size=11, color=BLUE, bold=True, font=MONO)
-    text(s, MX + 0.3, 6.17, 7.6, 0.35, "Hoàng Hôn  ·  Văn Duy  ·  Duy Khang  ·  Thành Trung", size=16, bold=True)
+    text(s, MX + 0.3, 5.38, 7.6, 0.42, "Thầy Cáp Phạm Đình Thăng", size=24, bold=True)
+    text(s, MX + 0.3, 5.78, 7.6, 0.3, "Khoa Khoa học Máy tính", size=15, color=MUTED)
+    text(s, MX + 0.3, 6.12, 7.6, 0.3, "SINH VIÊN THỰC HIỆN", size=10, color=BLUE, bold=True, font=MONO)
+    text(s, MX + 0.3, 6.38, 7.6, 0.3, "Hoàng Hôn  ·  Văn Duy  ·  Duy Khang  ·  Thành Trung", size=14, bold=True)
 
 
 def s02_problem(prs):
@@ -281,8 +282,8 @@ def s04_preprocessing(prs):
     steps = [
         ("Unicode NFC", "Thống nhất dấu tiếng Việt, tránh cùng chữ khác mã", BLUE),
         ("Emoji / emojicon", "Chuyển thành tín hiệu văn bản hoặc loại bỏ nhiễu", MINT),
-        ("Teencode", "Ánh xạ ko → không, dc → được, … về dạng chuẩn", YELLOW),
-        ("Tách từ underthesea", "“quản lý” → quản_lý: giữ nguyên nghĩa từ ghép", ORANGE),
+        ("Teencode", "Ánh xạ ko thành không, dc thành được, đưa về dạng chuẩn", YELLOW),
+        ("Tách từ underthesea", "Tách các cụm từ tiếng Việt để giữ ý nghĩa trong văn cảnh", ORANGE),
         ("Lọc từ dừng", "Bỏ từ chức năng, giữ từ mang sắc thái", RED),
     ]
     for i, (t, d, c) in enumerate(steps):
@@ -302,9 +303,9 @@ def s04_preprocessing(prs):
     s.shapes[-1].rotation = 90
     text(s, x + 0.3, 4.15, w - 0.6, 0.3, "CLEAN TOKENS", size=11, color=MINT, bold=True, font=MONO)
     text(s, x + 0.3, 4.5, w - 0.6, 1.0,
-         "lương thấp quản_lý thiếu minh_bạch thường_xuyên phải ot không lương",
+         "lương quản lý minh bạch xuyên không lương",
          size=17, font=MONO, color=MINT)
-    text(s, x + 0.3, 5.75, w - 0.6, 0.7, "Từ ghép được nối bằng “_” để TF-IDF coi là một đặc trưng duy nhất.",
+    text(s, x + 0.3, 5.75, w - 0.6, 0.7, "Tokenizer và bộ lọc từ dừng giữ lại các token dùng cho TF-IDF.",
          size=12, color=MUTED)
 
 
@@ -338,8 +339,8 @@ def s05_eda(prs):
 
 def s06_tfidf(prs):
     s = new_slide(prs, 6, "05 · Đặc trưng", "Trích xuất TF-IDF N-gram (1,2)", 50,
-                  "Cấu hình TF-IDF: ngram (1,2), sublinear_tf, 5.000 đặc trưng. Chia Stratified 80/20: 6.734 train (Development), "
-                  "1.683 test khóa. Khóa tập test trước, mọi tuning chỉ trên Development. (~50s)")
+                  "Sau kiểm tra văn bản trùng, 8.414 review dùng cho mô hình. Chia Stratified 80/20: 6.731 mẫu Development, "
+                  "1.683 mẫu Final Test khóa. Mọi tuning chỉ trên Development. (~50s)")
     cfg = [("ngram_range", "(1, 2)", BLUE), ("sublinear_tf", "True", MINT), ("max_features", "5.000", YELLOW)]
     for i, (k, v, c) in enumerate(cfg):
         y = 1.8 + i * 1.25
@@ -349,7 +350,7 @@ def s06_tfidf(prs):
         text(s, MX + 2.7, y + 0.15, 2.3, 0.8, v, size=34, bold=True, color=c, font=MONO, align=PP_ALIGN.RIGHT)
     card(s, MX, 5.6, 5.2, 1.15)
     text(s, MX + 0.3, 5.75, 4.6, 0.85,
-         "Unigram + bigram bắt được cụm mang sắc thái: “không lương”, “thường_xuyên ot”.", size=13, color=MUTED)
+         "Unigram + bigram bắt được cụm mang sắc thái, ví dụ “không lương”.", size=13, color=MUTED)
     x = MX + 5.5
     w = CW - 5.5
     card(s, x, 1.8, w, 2.85, fill=SURF)
@@ -360,7 +361,7 @@ def s06_tfidf(prs):
     tw = w - 0.5
     card(s, x + 0.25, 5.45, tw * 0.8, 0.5, fill=blend(BG, BLUE, 0.35), line=None, radius=0.3)
     card(s, x + 0.25 + tw * 0.8 + 0.05, 5.45, tw * 0.2 - 0.05, 0.5, fill=blend(BG, ORANGE, 0.45), line=None, radius=0.3)
-    text(s, x + 0.25, 5.45, tw * 0.8, 0.5, "Development · 6.734 mẫu", size=13, bold=True,
+    text(s, x + 0.25, 5.45, tw * 0.8, 0.5, "Development · 6.731 mẫu", size=13, bold=True,
          align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
     text(s, x + 0.25 + tw * 0.8, 5.45, tw * 0.2, 0.5, "Test 1.683", size=12, bold=True,
          align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
@@ -495,23 +496,23 @@ def s09_final_test(prs, m, cm, per_class):
 
 def s10_errors(prs, m):
     s = new_slide(prs, 10, "09 · Error Analysis", "Vì sao mô hình sai? 3 nhóm nguyên nhân", 50,
-                  "442 trên 1.683 mẫu sai (26,3%). Phân tích 15 ca điển hình cho ba nhóm: review nhiều vế khen chê đan xen "
-                  "khiến tín hiệu tích cực đầu review lấn át; nhãn nhiễu do rating sao; review ngắn thiếu ngữ cảnh. (~50s)")
+                  "442 trên 1.683 mẫu sai (26,3%). Phân tích thủ công 15 ca gồm 10 review có cảm xúc lẫn lộn, "
+                  "4 ca nhãn nhiễu theo rating và 1 review dài có nhiều khía cạnh. (~50s)")
     err, tot = int(m["error_count"]), int(m["test_count"])
     card(s, MX, 1.8, 3.2, 4.95, fill=SURF2, line=blend(BG, RED, 0.4))
     text(s, MX + 0.3, 2.05, 2.6, 0.3, "SAI TRÊN FINAL TEST", size=11, color=RED, bold=True, font=MONO)
     text(s, MX + 0.3, 2.45, 2.7, 1.0, str(err), size=60, bold=True, color=RED, font=MONO)
     text(s, MX + 0.3, 3.55, 2.6, 0.5, f"trên {tot:,} mẫu".replace(",", "."), size=15, color=MUTED)
     text(s, MX + 0.3, 4.2, 2.6, 0.8, f"{err / tot * 100:.1f}% tỉ lệ lỗi", size=22, bold=True)
-    text(s, MX + 0.3, 5.1, 2.6, 1.4, "Phần lớn lỗi là Neutral ↔ lớp lân cận, không phải đảo cực Positive ↔ Negative.",
+    text(s, MX + 0.3, 5.1, 2.6, 1.4, "Phần lớn lỗi liên quan Neutral và Positive, không phải đảo cực Positive và Negative.",
          size=12, color=MUTED)
     cards = [
-        ("Nhiều vế khen–chê", "Từ tích cực ở đầu review lấn át phần phàn nàn về OT/lương.",
-         "“Môi trường tốt… chính sách OT thiếu minh bạch” → dự đoán Positive (97%)", YELLOW),
-        ("Nhãn nhiễu theo sao", "Nhãn suy ra từ rating; người dùng cho 2★ nhưng viết nhiều ý tích cực.",
-         "“Môi trường năng động… OT quá nhiều, lương thấp” (2★) → Positive", ORANGE),
-        ("Review ngắn", "Quá ít token, TF-IDF không đủ tín hiệu để phân biệt Neutral với Positive.",
-         "Vài từ chung chung như “ổn”, “tạm được” → Neutral / Positive lẫn lộn", BLUE),
+        ("Cảm xúc lẫn lộn · 10/15", "Ý khen và chê cùng xuất hiện; mô hình khó quy về một nhãn duy nhất.",
+         "Ví dụ: khen môi trường nhưng phàn nàn về OT, lương hoặc quản lý.", YELLOW),
+        ("Nhãn nhiễu theo sao · 4/15", "Nhãn suy ra từ rating có thể không khớp sắc thái của nội dung review.",
+         "Có review mang giọng tiêu cực nhưng rating vẫn sinh nhãn Positive hoặc Neutral.", ORANGE),
+        ("Review dài, đa khía cạnh · 1/15", "Một nhãn ba lớp không giữ được đầy đủ ý kiến theo từng khía cạnh.",
+         "Review mô tả nhiều trải nghiệm ở các giai đoạn khác nhau của công việc.", BLUE),
     ]
     x0, w = MX + 3.5, CW - 3.5
     for i, (t, d, ex, c) in enumerate(cards):
@@ -572,41 +573,36 @@ def s11_insight(prs, dist):
 
 
 def s12_demo(prs):
-    s = new_slide(prs, 12, "11 · Web Demo", "Ứng dụng Streamlit Dark-tech · 5 phân hệ", 60,
-                  "Giới thiệu 5 trang. Chuyển sang LIVE DEMO hoặc mở video: trang Dự đoán real-time, nhập câu review khó "
-                  "và cho thấy nhãn cùng token kích hoạt. Nếu thiếu thời gian, chỉ demo trang Dự đoán. (~60s)")
-    pages = [("Tổng quan", "KPI dữ liệu, phân bố nhãn, kiến trúc pipeline", BLUE),
-             ("Insight doanh nghiệp", "Chọn công ty, xem WordCloud & từ khóa", MINT),
-             ("Benchmark", "Bảng xếp hạng 5 mô hình theo CV Macro F1", YELLOW),
-             ("Đánh giá lỗi", "Confusion matrix & 15 ca sai điển hình", ORANGE),
-             ("Dự đoán real-time", "Nhập review → nhãn, xác suất, token kích hoạt", RED)]
-    for i, (t, d, c) in enumerate(pages):
-        y = 1.8 + i * 0.99
-        hot = i == 4
-        card(s, MX, y, 6.6, 0.86, fill=blend(SURF, c, 0.12) if hot else SURF, line=blend(BG, c, 0.55 if hot else 0.25))
-        badge(s, MX + 0.2, y + 0.26, f"0{i + 1}", c, 12, w=0.55)
-        text(s, MX + 0.95, y + 0.1, 5.4, 0.32, t, size=16, bold=True)
-        text(s, MX + 0.95, y + 0.45, 5.4, 0.35, d, size=12, color=MUTED)
-    x = MX + 6.9
-    w = CW - 6.9
-    card(s, x, 1.8, w, 4.85, fill=SURF2, line=blend(BG, RED, 0.4))
-    text(s, x + 0.3, 2.0, w - 0.6, 0.3, "LIVE DEMO  ·  REAL-TIME PREDICTION", size=11, color=RED, bold=True, font=MONO)
-    text(s, x + 0.3, 2.45, w - 0.6, 1.3,
-         "“Lương thấp, quản lý thiếu minh bạch và thường xuyên phải OT không lương.”", size=17, font=MONO)
-    text(s, x + 0.3, 3.95, w - 0.6, 0.3, "KẾT QUẢ DỰ ĐOÁN", size=11, color=MUTED, bold=True, font=MONO)
-    text(s, x + 0.3, 4.3, w - 0.6, 0.8, [[("NEGATIVE ", {"color": RED, "bold": True}), ("77,3%", {"color": TEXT})]],
-         size=36, font=MONO)
-    text(s, x + 0.3, 5.35, w - 0.6, 1.1, "streamlit run app.py  →  mở trình duyệt, chọn phân hệ “Dự đoán”.",
-         size=12, color=MUTED, font=MONO)
+    s = new_slide(prs, 15, "14 · Live demo", "Live demo hệ thống phân tích cảm xúc", 55,
+                  "Bạn Nguyễn Duy Khang dẫn dắt ngắn, sau đó chuyển sang ứng dụng Streamlit để thao tác trực tiếp. "
+                  "Slide này không hiển thị trước kết quả demo. (~55s, gồm 15s dẫn dắt và 40s thao tác)")
+    card(s, MX, 1.8, 5.0, 4.95, fill=SURF2, line=blend(BG, MINT, 0.4))
+    text(s, MX + 0.35, 2.05, 4.3, 0.3, "NGƯỜI TRÌNH BÀY", size=11, color=BLUE, bold=True, font=MONO)
+    text(s, MX + 0.35, 2.55, 4.3, 0.7, "NGUYỄN DUY KHANG", size=30, color=MINT, bold=True)
+    text(s, MX + 0.35, 3.55, 4.3, 1.3,
+         "Minh họa cách một review mới đi qua pipeline đã huấn luyện", size=20, color=MUTED)
+    text(s, MX + 0.35, 5.65, 4.3, 0.65, "Sau trang này, nhóm chuyển sang ứng dụng Streamlit.", size=14, color=MINT)
+
+    steps = [
+        ("01", "Nhập review mới", "Dùng một câu tiếng Việt chưa có trong dữ liệu huấn luyện", BLUE),
+        ("02", "Quan sát dự đoán", "Đọc nhãn cảm xúc và xác suất của ba lớp", MINT),
+        ("03", "Kiểm tra đầu vào", "Xem văn bản đã xử lý và các token TF-IDF nổi bật", YELLOW),
+    ]
+    x = MX + 5.4
+    for i, (n, title, body, color) in enumerate(steps):
+        y = 1.8 + i * 1.55
+        card(s, x, y, CW - 5.4, 1.28, fill=SURF)
+        badge(s, x + 0.25, y + 0.25, n, color, 12, w=0.62)
+        text(s, x + 1.05, y + 0.16, CW - 6.8, 0.4, title, size=18, bold=True)
+        text(s, x + 1.05, y + 0.58, CW - 6.8, 0.5, body, size=13, color=MUTED)
 
 
 def s13_features(prs):
-    s = new_slide(prs, 13, "12 · Explainability", "Token TF-IDF nào kích hoạt quyết định?", 65,
-                  "Với câu khó, mô hình xuất Negative 77,3%. Các token TF-IDF mạnh nhất là “thường_xuyên không”, “minh_bạch”, "
-                  "“thường_xuyên”, “không lương”, “quản_lý” — đều là cụm than phiền. Bigram giúp bắt cụm phủ định mà unigram bỏ sót. "
-                  "Đây là tính diễn giải của mô hình tuyến tính. (~65s)")
-    tokens = [("thường_xuyên không", 0.605), ("minh_bạch", 0.438), ("thường_xuyên", 0.366),
-              ("không lương", 0.351), ("quản_lý", 0.310), ("lương", 0.270), ("không", 0.126)]
+    s = new_slide(prs, 12, "11 · Explainability", "Các token TF-IDF nổi bật trong ví dụ", 65,
+                  "Với câu demo, mô hình dự đoán Negative 84,3%. Các token có trọng số TF-IDF lớn nhất là “xuyên”, “lý”, "
+                  "“không lương”, “lương” và “không”. Trọng số này thể hiện mức nổi bật trong câu, không phải chiều tác động lên nhãn. (~65s)")
+    tokens = [("xuyên", 0.615), ("lý", 0.606), ("không lương", 0.384),
+              ("lương", 0.296), ("không", 0.138)]
     cd = CategoryChartData()
     cd.categories = [t for t, _ in tokens]
     cd.add_series("TF-IDF", [v for _, v in tokens])
@@ -635,7 +631,7 @@ def s13_features(prs):
     w = CW - 7.7
     card(s, x, 1.8, w, 2.75, fill=SURF2, line=blend(BG, RED, 0.4))
     text(s, x + 0.25, 1.95, w - 0.5, 0.3, "XÁC SUẤT DỰ ĐOÁN", size=11, color=RED, bold=True, font=MONO)
-    for i, (lab, p, c) in enumerate([("Negative", 77.3, RED), ("Neutral", 21.4, YELLOW), ("Positive", 1.4, MINT)]):
+    for i, (lab, p, c) in enumerate([("Negative", 84.3, RED), ("Neutral", 15.0, YELLOW), ("Positive", 0.7, MINT)]):
         y = 2.4 + i * 0.7
         text(s, x + 0.25, y, 1.1, 0.35, lab, size=13, anchor=MSO_ANCHOR.MIDDLE)
         card(s, x + 1.4, y + 0.08, w - 2.7, 0.2, fill=SURF, line=None, radius=0.5)
@@ -644,13 +640,13 @@ def s13_features(prs):
              align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE)
     card(s, x, 4.75, w, 2.0)
     text(s, x + 0.25, 4.9, w - 0.5, 1.8, [
-        [("Bigram quan trọng: ", {"bold": True, "color": BLUE}), ("“không lương”, “thường_xuyên không” bắt phủ định mà unigram bỏ sót.", {"color": MUTED})],
-        [("Diễn giải được ", {"bold": True, "color": MINT}), ("nhờ mô hình tuyến tính trên TF-IDF.", {"color": MUTED})],
+        [("Bigram có mặt: ", {"bold": True, "color": BLUE}), ("“không lương” được xem như một đặc trưng riêng.", {"color": MUTED})],
+        [("Lưu ý: ", {"bold": True, "color": MINT}), ("trọng số TF-IDF không thể hiện chiều tác động lên nhãn.", {"color": MUTED})],
     ], size=13, spacing=8)
 
 
 def s14_lessons(prs):
-    s = new_slide(prs, 14, "13 · Tổng kết", "Thành tựu, bài học & hạn chế", 55,
+    s = new_slide(prs, 13, "12 · Tổng kết", "Thành tựu, bài học & hạn chế", 55,
                   "Thành tựu: pipeline hoàn chỉnh, đánh giá không rò rỉ, app chạy được. Bài học: với dữ liệu lệch phải dùng Macro F1, "
                   "SMOTE đặt trong Pipeline, khóa tập test. Hạn chế: nhãn nhiễu theo sao, Neutral khó, chưa hiểu ngữ cảnh sâu. (~55s)")
     cols = [
@@ -671,7 +667,7 @@ def s14_lessons(prs):
 
 
 def s15_closing(prs):
-    s = new_slide(prs, 15, "14 · Kết luận", "Kết luận & hướng phát triển", 35,
+    s = new_slide(prs, 14, "13 · Kết luận", "Kết luận & hướng phát triển", 35,
                   "Tóm tắt: đã xây dựng hệ thống phân tích cảm xúc ITviec hoàn chỉnh. Hướng mở rộng: ABSA phân tích theo khía cạnh, "
                   "LLM/transformer tiếng Việt. Cảm ơn GVHD và Hội đồng; mời Q&A / live demo. (~35s)")
     card(s, MX, 1.8, 6.0, 4.95, fill=SURF2)
@@ -713,10 +709,10 @@ def build(out: Path):
     s09_final_test(prs, m, cm, per_class)
     s10_errors(prs, m)
     s11_insight(prs, dist)
-    s12_demo(prs)
     s13_features(prs)
     s14_lessons(prs)
     s15_closing(prs)
+    s12_demo(prs)
     assert len(prs.slides) == TOTAL
     out.parent.mkdir(parents=True, exist_ok=True)
     prs.save(out)

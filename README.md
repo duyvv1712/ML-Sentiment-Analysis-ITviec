@@ -149,7 +149,7 @@ Do_An_May_Hoc_Sentiment_Analysis/
    - Tiền xử lý 2 tầng (`clean_basic_text` & `clean_advance_text`), chuẩn hóa Unicode, emoji/emoticon, teencode, thuật ngữ IT và lọc stopwords.
    - Gán nhãn cảm xúc 3 lớp và xuất `data/processed/reviews_cleaned.xlsx` (8.417 mẫu).
 2. **Bước 2 — Khám phá dữ liệu (EDA) & Trích xuất TF-IDF ([01_data_exploration_eda.ipynb](notebooks/01_data_exploration_eda.ipynb)):**
-   - Phân tích thống kê phân bố số sao rating, độ dài review, tương quan các khía cạnh, xuất 9 biểu đồ 300 DPI vào `reports/figures/`.
+   - Phân tích thống kê phân bố số sao rating, độ dài review, tương quan các khía cạnh, xuất 9 biểu đồ 300 DPI vào `reports/figures/`. Dữ liệu nguồn có 8.417 review; sau kiểm tra văn bản trùng, bộ dữ liệu mô hình hóa còn 8.414 review.
    - Trích xuất đặc trưng **TF-IDF N-gram (1, 2)** với `sublinear_tf=True`, `max_features=5000`, chia tập Stratified 80/20 và đóng gói artifacts vào `models/` (`train_test_features.joblib`, `artifact_manifest.json`).
 3. **Bước 3 — Huấn luyện & Tối ưu Machine Learning ([03_sentiment_modeling_ml.ipynb](notebooks/03_sentiment_modeling_ml.ipynb)):**
    - Nạp ma trận đặc trưng từ `models/`, huấn luyện và tinh chỉnh 5 thuật toán Machine Learning (Naive Bayes, SVM, Logistic Regression, Random Forest, Stacking Ensemble) bằng Stratified 5-Fold Cross Validation trên tập Development.
@@ -194,7 +194,6 @@ Chạy kiểm thử:
 | **3** | **Phân tích EDA & Trích xuất TF-IDF** | **TV2: Văn Duy** | ✅ **Hoàn thành** | Notebook `01_data_exploration_eda.ipynb` đã chạy đủ output; 9 biểu đồ 300 DPI tại `reports/figures/`; `src/features.py` + 11 test pass; Stratified 80/20 seed 2026 (development 6.731 / final test 1.683 khóa); artifacts `text_tfidf_vectorizer.joblib`, `text_feature_extractor.joblib`, `train_test_features.joblib`, `artifact_manifest.json` (có checksum + runtime). CV development: TF-IDF (1,2) Macro F1 **0,5722**. Báo cáo: `reports/eda_feature_engineering.md`. |
 | **4** | **Huấn luyện Mô hình Machine Learning** | **TV3: Duy Khang** | ✅ **Hoàn thành** | `03_sentiment_modeling_ml.ipynb` + `src/models.py` (12 test pass): so sánh `class_weight='balanced'` vs SMOTE (SMOTE bọc trong Pipeline theo từng fold, chống leakage), GridSearchCV tune 5 thuật toán (Naive Bayes, Logistic Regression, Linear SVM, Random Forest, Stacking Ensemble `[MNB,LR,SVM,RF]→LR`) bằng Stratified 5-Fold CV trên Development set (`X_train`, không đụng Final Test). Model tốt nhất: **Logistic Regression** (`C=1.0`, SMOTE), CV Macro F1 **0,5727**, khóa tại `models/best_sentiment_model.joblib`. Báo cáo: [reports/modeling_hyperparameter_tuning.md](reports/modeling_hyperparameter_tuning.md). |
 | **5** | **Đánh giá Final Test, Insight & Demo** | **TV4: Thành Trung** | ✅ **Hoàn thành** | Final Test run-once: Accuracy **73,74%**, Macro F1 **0,5714**; có per-class metrics, Confusion Matrix, 15 mẫu Error Analysis, 12 WordCloud, 5 company case study và Web Demo Streamlit. |
-| **6** | **Tổng hợp Báo cáo Word & Slide trình chiếu** | **TV1 & Cả nhóm** | ⏳ **Giai đoạn cuối** | Soạn thảo toàn văn Báo cáo Word/PDF và hoàn thiện Slide PowerPoint theo đúng cấu trúc đề cương `reports/De_Cuong_Do_An_Mon_Hoc_May_Hoc.md`. |
-
+| **6** | **Tổng hợp Báo cáo Word & Slide trình chiếu** | **TV1 & Cả nhóm** | ⏳ **Giai đoạn cuối** | Slide PowerPoint 15 trang đã có tại `reports/slides/ITviec_Sentiment_Analysis.pptx`; báo cáo Word/PDF cần hoàn thiện theo đề cương `reports/De_Cuong_Do_An_Mon_Hoc_May_Hoc.md`. |
 
 
