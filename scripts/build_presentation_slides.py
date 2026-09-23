@@ -1,16 +1,25 @@
-"""Build the 15-slide Dark-tech defense deck (12 minutes) for the ITviec sentiment project.
+"""Build or update the 15-slide Dark-tech defense deck (12 minutes) for the ITviec sentiment project.
 
 Usage:
-    python scripts/build_presentation_slides.py [-o reports/slides/ITviec_Sentiment_Analysis.pptx]
+    python scripts/build_presentation_slides.py [-o reports/slides/ITviec_Sentiment_Analysis.pptx] [--scratch]
 
-Requires: python-pptx (pip install python-pptx). All figures/metrics are read from
-reports/ (figures, evaluation, company_insights); no model loading is needed.
-Speaker notes on every slide carry the target duration; they sum to 720 s (12:00).
+Key highlights:
+    - Synchronizes metrics with retrained_v2 evaluation snapshot (Accuracy 74.33%, Macro F1 0.5764, Errors 432/1683).
+    - Removes semicolons (;) from presentation titles:
+        Slide 08: 'Xếp hạng gốc – Logistic Regression cải thiện sau sửa lỗi'
+        Slide 09: 'Bản sửa cải thiện nhẹ, nhưng lớp Negative vẫn khó'
+    - Ensures clear slide transitions matching the 12-minute script:
+        Slide 14: 'Kết thúc nội dung chính. Tiếp theo: live demo.'
+        Slide 15: 'Sau trang này, nhóm chuyển sang ứng dụng Streamlit để thao tác trực tiếp.'
+    - Handles Windows PowerPoint file locking gracefully (saves to _updated.pptx fallback if locked).
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import json
+import shutil
+import sys
 from pathlib import Path
 
 from pptx import Presentation
@@ -25,6 +34,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 FIG = ROOT / "reports" / "figures"
 EVAL = ROOT / "reports" / "evaluation"
+EVAL_V2 = EVAL / "retrained_v2"
 INSIGHT = ROOT / "reports" / "company_insights"
 
 # ---- Dark-tech palette (mirrors src/app_theme.py so slides match the Streamlit demo) ----
@@ -39,7 +49,7 @@ MINT = "50E3A4"
 YELLOW = "F4D35E"
 ORANGE = "FF994F"
 RED = "FF6677"
-FONT = "Calibri"
+FONT = "Helvetica Neue"
 MONO = "Consolas"
 
 W, H = 13.333, 7.5
@@ -175,20 +185,36 @@ def style_chart(chart, legend=False):
 
 # --------------------------------------------------------------------------- data
 def load_metrics():
-    m = read_csv(EVAL / "final_test_metrics.csv")[0]
+    # Retrained v2 snapshot
+    snap_path = EVAL_V2 / "final_test_snapshot.json"
+    if snap_path.exists():
+        with open(snap_path, encoding="utf-8") as f:
+            snap = json.load(f)
+        m = {
+            "accuracy": snap["metrics"]["accuracy"],
+            "macro_f1": snap["metrics"]["macro_f1"],
+            "weighted_f1": snap["metrics"]["weighted_f1"],
+            "error_count": snap["metrics"]["error_count"],
+            "test_count": snap["metrics"]["test_count"],
+            "cv_macro_f1": snap["cv_macro_f1"],
+        }
+        cm = read_csv(EVAL_V2 / "confusion_matrix.csv")
+        per_class = read_csv(EVAL_V2 / "final_test_per_class.csv")
+    else:
+        m = read_csv(EVAL / "final_test_metrics.csv")[0]
+        cm = read_csv(EVAL / "confusion_matrix.csv")
+        per_class = read_csv(EVAL / "final_test_per_class.csv")
+
     cv = read_csv(EVAL / "model_ranking_cv.csv")
-    cm = read_csv(EVAL / "confusion_matrix.csv")
-    per_class = read_csv(EVAL / "final_test_per_class.csv")
     dist = read_csv(INSIGHT / "company_sentiment_distribution.csv")
     return m, cv, cm, per_class, dist
 
 
-# --------------------------------------------------------------------------- slides
+# --------------------------------------------------------------------------- slides (Scratch generation)
 def s01_cover(prs):
-    s = new_slide(prs, 1, "", "", 20,
-                  "Kính chào Thầy Cáp Phạm Đình Thăng cùng thầy cô và các bạn. Giới thiệu đề tài và nhóm. Nêu nhanh: 8.417 review ITviec, "
-                  "phân loại 3 lớp cảm xúc, có demo web. (~20s)")
-    # decorative "token grid" motif on the right
+    s = new_slide(prs, 1, "", "", 40,
+                  "Kính chào Thầy Cáp Phạm Đình Thăng cùng thầy cô và các bạn. Giới thiệu đề tài: Phân tích cảm xúc "
+                  "đánh giá công ty ITviec. Dữ liệu: 8.414 review, 3 lớp Positive, Neutral, Negative. (~40s)")
     import random
     rnd = random.Random(7)
     cols = [BLUE, MINT, YELLOW, ORANGE, RED]
@@ -196,16 +222,16 @@ def s01_cover(prs):
         for gy in range(9):
             if rnd.random() < 0.55:
                 c = cols[rnd.randrange(len(cols))]
-                sq = card(s, 9.2 + gx * 0.62, 1.0 + gy * 0.62, 0.46, 0.46,
-                          fill=blend(BG, c, rnd.choice([0.10, 0.18, 0.3])), line=None, radius=0.2)
+                card(s, 9.2 + gx * 0.62, 1.0 + gy * 0.62, 0.46, 0.46,
+                     fill=blend(BG, c, rnd.choice([0.10, 0.18, 0.3])), line=None, radius=0.2)
     badge(s, MX, 1.0, "ĐỒ ÁN MÔN HỌC MÁY HỌC  ·  UIT", BLUE, 12, w=4.1)
     text(s, MX, 1.75, 8.2, 2.4, [
         [("PHÂN TÍCH CẢM XÚC", {})],
         [("ĐÁNH GIÁ CÔNG TY ", {}), ("ITVIEC", {"color": MINT})],
     ], size=44, bold=True, spacing=2)
     text(s, MX, 3.75, 8, 0.8,
-         "Sentiment Analysis 3 lớp (Negative · Neutral · Positive) với TF-IDF và các mô hình Machine Learning cổ điển",
-         size=18, color=MUTED)
+        "Phân loại ba lớp từ review tiếng Việt bằng TF-IDF và mô hình học máy",
+        size=18, color=MUTED)
     card(s, MX, 4.75, 8.2, 1.95)
     text(s, MX + 0.3, 5.1, 7.6, 0.35, "GIẢNG VIÊN HƯỚNG DẪN", size=11, color=BLUE, bold=True, font=MONO)
     text(s, MX + 0.3, 5.38, 7.6, 0.42, "Thầy Cáp Phạm Đình Thăng", size=24, bold=True)
@@ -215,13 +241,13 @@ def s01_cover(prs):
 
 
 def s02_problem(prs):
-    s = new_slide(prs, 2, "01 · Đặt vấn đề", "Bài toán & thách thức dữ liệu ITviec", 40,
-                  "Nhà tuyển dụng/ứng viên cần đọc hàng nghìn review. Mục tiêu: tự động gán nhãn cảm xúc. "
-                  "Điểm khó nhất là mất cân bằng 11:1, kế đến teencode, trộn Anh-Việt, và review vừa khen vừa chê. (~40s)")
+    s = new_slide(prs, 2, "01 · Bài toán", "Dữ liệu lệch mạnh và nhãn chỉ là nhãn yếu", 45,
+                  "Mất cân bằng lớp: Positive 73,8%, Negative 6,8% (tỉ lệ gần 11:1). Accuracy dễ gây ngộ nhận, "
+                  "vì vậy Macro F1 là thước đo chính. Nhãn yếu suy từ số sao, chứa nhiều câu vừa khen vừa chê. (~45s)")
     card(s, MX, 1.8, 4.0, 4.95, fill=SURF2)
     text(s, MX + 0.3, 2.05, 3.4, 0.3, "MẤT CÂN BẰNG LỚP", size=11, color=ORANGE, bold=True, font=MONO)
     text(s, MX + 0.3, 2.5, 3.4, 1.4, "11 : 1", size=72, bold=True, color=ORANGE, font=MONO)
-    text(s, MX + 0.3, 3.95, 3.4, 0.9, "Positive so với Negative trên 8.417 review — Accuracy dễ đánh lừa, cần Macro F1.",
+    text(s, MX + 0.3, 3.95, 3.4, 0.9, "Positive so với Negative trên 8.414 review — Accuracy dễ đánh lừa, cần Macro F1.",
          size=14, color=MUTED)
     for i, (lbl, pct, c) in enumerate([("Positive", 73.8, MINT), ("Neutral", 19.5, YELLOW), ("Negative", 6.8, RED)]):
         y = 5.0 + i * 0.55
@@ -231,10 +257,10 @@ def s02_problem(prs):
         text(s, MX + 3.0, y, 0.7, 0.3, f"{pct}%", size=12, color=c, bold=True, font=MONO, anchor=MSO_ANCHOR.MIDDLE)
 
     items = [
-        ("Teencode & viết tắt", "“ko”, “dc”, “ok”, emoji, emojicon xen lẫn trong câu.", BLUE),
-        ("Từ lóng Anh – Việt", "OT, deadline, onsite, fresher, benefit… trộn ngôn ngữ trong cùng review.", MINT),
+        ("Teencode & viết tắt", "“ko”, “dc”, “ok”, emoji xen lẫn trong câu tiếng Việt.", BLUE),
+        ("Từ lóng Anh – Việt", "OT, deadline, onsite, fresher, benefit… trộn lẫn trong review.", MINT),
         ("Khen chê đan xen", "“Môi trường tốt nhưng lương thấp, OT nhiều” — nhiều vế, cảm xúc đối lập.", YELLOW),
-        ("Nhãn nhiễu theo sao", "Nhãn suy ra từ rating 1–5 sao, không phải người đọc gán thủ công.", RED),
+        ("Nhãn yếu theo sao", "Nhãn suy ra từ rating 1–5 sao, không phải người đọc gán thủ công.", RED),
     ]
     x0, gw = MX + 4.3, 3.9
     for i, (h, d, c) in enumerate(items):
@@ -246,15 +272,16 @@ def s02_problem(prs):
         text(s, x + 0.3, y + 1.3, gw - 0.6, 0.9, d, size=13, color=MUTED)
 
 
-def s03_pipeline(prs):
-    s = new_slide(prs, 3, "02 · Kiến trúc", "Pipeline End-to-End", 30,
-                  "Toàn bộ luồng: thu thập → tiền xử lý → TF-IDF → huấn luyện 5 mô hình có SMOTE → đóng gói thành web Streamlit. (~30s)")
+def s03_pipeline(prs, m):
+    s = new_slide(prs, 3, "02 · Kiến trúc", "Pipeline từ dữ liệu nguồn đến ứng dụng", 45,
+                  "Toàn bộ luồng: thu thập → tiền xử lý 2 tầng → TF-IDF → huấn luyện 5 mô hình có SMOTE → app Streamlit. "
+                  "Sau sửa tiền xử lý, model đạt Macro F1 0,5764 trên Final Test cũ. (~45s)")
     steps = [
-        ("01", "Thu thập", "8.417 review\nITviec", BLUE),
+        ("01", "Thu thập", "8.414 review\nITviec", BLUE),
         ("02", "Tiền xử lý", "Unicode NFC\nunderthesea", MINT),
         ("03", "TF-IDF", "N-gram (1,2)\n5.000 chiều", YELLOW),
         ("04", "Huấn luyện", "5 mô hình ML\nSMOTE + 5-fold CV", ORANGE),
-        ("05", "Web App", "Streamlit\nDự đoán real-time", RED),
+        ("05", "Ứng dụng", "Đánh giá, insight\nvà Streamlit", RED),
     ]
     bw, gap = 2.06, 0.45
     y = 2.35
@@ -267,94 +294,92 @@ def s03_pipeline(prs):
         if i < 4:
             arrow(s, x + bw + 0.04, y + 1.15, 0.37, 0.3, c)
     card(s, MX, 5.4, CW, 1.25)
-    text(s, MX + 0.4, 5.6, CW - 0.8, 0.4, "KẾT QUẢ ĐẦU RA", size=11, color=BLUE, bold=True, font=MONO)
+    text(s, MX + 0.4, 5.6, CW - 0.8, 0.4, "KẾT QUẢ CUỐI", size=11, color=BLUE, bold=True, font=MONO)
     text(s, MX + 0.4, 5.95, CW - 0.8, 0.6, [[
         ("Mô hình chọn: ", {"color": MUTED}), ("Logistic Regression (C=1.0, SMOTE)", {"bold": True, "color": MINT}),
-        ("   ·   Final Test: ", {"color": MUTED}), ("Accuracy 73,74%", {"bold": True}),
-        ("   ·   ", {"color": MUTED}), ("Macro F1 0,5714", {"bold": True}),
+        ("   ·   Final Test: ", {"color": MUTED}), (f"Accuracy {float(m['accuracy']) * 100:.2f}%", {"bold": True}),
+        ("   ·   ", {"color": MUTED}), (f"Macro F1 {float(m['macro_f1']):.4f}", {"bold": True}),
     ]], size=16)
 
 
 def s04_preprocessing(prs):
-    s = new_slide(prs, 4, "03 · Tiền xử lý", "Làm sạch văn bản tiếng Việt chuyên sâu", 50,
-                  "Năm bước: chuẩn hóa Unicode NFC, xử lý emoji/emojicon, sửa teencode, tách từ bằng underthesea, lọc từ dừng. "
-                  "Ví dụ bên phải cho thấy câu thô thành chuỗi token sạch. (~50s)")
+    s = new_slide(prs, 4, "03 · Tiền xử lý", "Làm sạch văn bản tiếng Việt theo hai tầng", 45,
+                  "Tầng 1 chuẩn hóa cơ bản (Unicode NFC, URL, email, teencode). Tầng 2 tách từ và lọc từ dừng. "
+                  "Giữ từ phủ định và từ chỉ mức độ (lương thấp, thiếu minh bạch, không lương). (~45s)")
     steps = [
-        ("Unicode NFC", "Thống nhất dấu tiếng Việt, tránh cùng chữ khác mã", BLUE),
-        ("Emoji / emojicon", "Chuyển thành tín hiệu văn bản hoặc loại bỏ nhiễu", MINT),
-        ("Teencode", "Ánh xạ ko thành không, dc thành được, đưa về dạng chuẩn", YELLOW),
-        ("Tách từ underthesea", "Tách các cụm từ tiếng Việt để giữ ý nghĩa trong văn cảnh", ORANGE),
-        ("Lọc từ dừng", "Bỏ từ chức năng, giữ từ mang sắc thái", RED),
+        ("Chuẩn hóa cơ bản", "Unicode NFC, URL, email và chữ thường.", BLUE),
+        ("Chuẩn hóa tín hiệu", "Emoji, emojicon, teencode và thuật ngữ IT.", MINT),
+        ("Tách từ", "Ưu tiên underthesea, dùng pyvi khi cần fallback.", YELLOW),
+        ("Lọc từ dừng", "Giữ từ phủ định và từ chỉ mức độ như “thấp”, “nhiều”.", RED),
     ]
     for i, (t, d, c) in enumerate(steps):
-        y = 1.8 + i * 0.99
-        card(s, MX, y, 6.2, 0.86)
-        badge(s, MX + 0.2, y + 0.26, str(i + 1), c, 12, w=0.4)
-        text(s, MX + 0.85, y + 0.1, 5.2, 0.32, t, size=16, bold=True)
-        text(s, MX + 0.85, y + 0.44, 5.2, 0.35, d, size=12, color=MUTED)
+        y = 1.8 + i * 1.2
+        card(s, MX, y, 6.2, 1.05)
+        badge(s, MX + 0.2, y + 0.35, str(i + 1), c, 12, w=0.4)
+        text(s, MX + 0.85, y + 0.15, 5.2, 0.35, t, size=16, bold=True)
+        text(s, MX + 0.85, y + 0.55, 5.2, 0.45, d, size=13, color=MUTED)
     x = MX + 6.5
     w = CW - 6.5
     card(s, x, 1.8, w, 4.85, fill=SURF2)
-    text(s, x + 0.3, 2.0, w - 0.6, 0.3, "VÍ DỤ  ·  RAW", size=11, color=RED, bold=True, font=MONO)
+    text(s, x + 0.3, 2.0, w - 0.6, 0.3, "REVIEW GỐC", size=11, color=RED, bold=True, font=MONO)
     text(s, x + 0.3, 2.35, w - 0.6, 1.1,
          "Lương thấp, quản lý thiếu minh bạch và thường xuyên phải OT không lương.",
          size=17, font=MONO, color=TEXT)
     arrow(s, x + w / 2 - 0.2, 3.6, 0.4, 0.3, BLUE)
     s.shapes[-1].rotation = 90
-    text(s, x + 0.3, 4.15, w - 0.6, 0.3, "CLEAN TOKENS", size=11, color=MINT, bold=True, font=MONO)
+    text(s, x + 0.3, 4.15, w - 0.6, 0.3, "SAU TIỀN XỬ LÝ (CLEAN TOKENS)", size=11, color=MINT, bold=True, font=MONO)
     text(s, x + 0.3, 4.5, w - 0.6, 1.0,
-         "lương quản lý minh bạch xuyên không lương",
+         "lương thấp quản_lý thiếu minh_bạch thường_xuyên ot không lương",
          size=17, font=MONO, color=MINT)
-    text(s, x + 0.3, 5.75, w - 0.6, 0.7, "Tokenizer và bộ lọc từ dừng giữ lại các token dùng cho TF-IDF.",
+    text(s, x + 0.3, 5.75, w - 0.6, 0.7, "Đầu ra clean_advance_text giữ trọn vẹn ngữ nghĩa cảm xúc cho mô hình.",
          size=12, color=MUTED)
 
 
 def s05_eda(prs):
-    s = new_slide(prs, 5, "04 · EDA", "Khám phá dữ liệu: lệch nhãn, độ dài, khía cạnh", 50,
-                  "8.417 review; 73,8% tích cực, 19,5% trung tính, 6,8% tiêu cực. Độ dài review lệch phải. "
-                  "Các khía cạnh đánh giá tương quan dương với nhau, cho thấy hiệu ứng halo khiến nhãn theo sao nhiễu. (~50s)")
-    for i, (lbl, pct, c, cnt) in enumerate([("POSITIVE", "73,8%", MINT, "rating 4–5★"),
-                                            ("NEUTRAL", "19,5%", YELLOW, "rating 3★"),
-                                            ("NEGATIVE", "6,8%", RED, "rating 1–2★")]):
-        y = 1.8 + i * 1.66
-        card(s, MX, y, 3.2, 1.5, fill=SURF2, line=blend(BG, c, 0.4))
-        text(s, MX + 0.25, y + 0.18, 2.7, 0.3, lbl, size=11, color=c, bold=True, font=MONO)
-        text(s, MX + 0.25, y + 0.45, 2.7, 0.75, pct, size=44, bold=True, color=c, font=MONO)
-        text(s, MX + 0.25, y + 1.15, 2.7, 0.28, cnt, size=11, color=MUTED)
-    x2 = MX + 3.5
-    card(s, x2, 1.8, 4.6, 4.95, fill=SURF)
-    text(s, x2 + 0.25, 1.95, 4.1, 0.3, "TƯƠNG QUAN CÁC KHÍA CẠNH", size=11, color=BLUE, bold=True, font=MONO)
-    picture(s, FIG / "eda_aspect_correlation.png", x2 + 0.2, 2.35, 4.2, 4.25)
-    x3 = x2 + 4.9
-    w3 = CW - (x3 - MX)
-    card(s, x3, 1.8, w3, 2.5, fill=SURF)
-    text(s, x3 + 0.2, 1.95, w3 - 0.4, 0.3, "PHÂN BỐ ĐỘ DÀI", size=11, color=BLUE, bold=True, font=MONO)
-    picture(s, FIG / "eda_text_length_distribution.png", x3 + 0.15, 2.35, w3 - 0.3, 1.85)
-    card(s, x3, 4.5, w3, 2.25, fill=SURF2)
-    text(s, x3 + 0.25, 4.7, w3 - 0.5, 1.9, [
-        [("Review dài, lệch phải ", {"bold": True}), ("→ cần TF-IDF thay vì đếm thô.", {"color": MUTED})],
-        [("Khía cạnh tương quan cao ", {"bold": True}), ("→ sao tổng thể che lấp ý kiến từng mặt.", {"color": MUTED})],
-    ], size=13, spacing=8)
+    s = new_slide(prs, 5, "04 · EDA", "Quản lý và lương liên hệ mạnh nhất với rating", 50,
+                  "Tương quan cao nhất: Management (0,7368) và Salary (0,7343). Phân tích chẩn đoán khám phá "
+                  "cho thấy người đánh giá đặc biệt chú trọng yếu tố quản lý và đãi ngộ. (~50s)")
+    metrics = [
+        ("MANAGEMENT VS RATING", "0,7368", MINT),
+        ("SALARY VS RATING", "0,7343", YELLOW),
+        ("OFFICE VS RATING", "0,5423", BLUE),
+    ]
+    card(s, MX, 1.8, 7.8, 4.95, fill=SURF)
+    text(s, MX + 0.25, 1.95, 7.3, 0.3, "TƯƠNG QUAN CÁC KHÍA CẠNH", size=11, color=BLUE, bold=True, font=MONO)
+    picture(s, FIG / "eda_aspect_correlation.png", MX + 0.2, 2.35, 7.4, 4.25)
+    x = MX + 8.1
+    w = CW - 8.1
+    for i, (lbl, val, c) in enumerate(metrics):
+        y = 1.8 + i * 1.55
+        card(s, x, y, w, 1.35, fill=SURF2, line=blend(BG, c, 0.4))
+        text(s, x + 0.25, y + 0.15, w - 0.5, 0.3, lbl, size=11, color=c, bold=True, font=MONO)
+        text(s, x + 0.25, y + 0.45, w - 0.5, 0.75, val, size=36, bold=True, color=c, font=MONO)
+    card(s, x, 1.8 + 3 * 1.55, w, 1.6)
+    text(s, x + 0.25, 1.8 + 3 * 1.55 + 0.2, w - 0.5, 1.2,
+         "Các điểm khía cạnh chỉ dùng cho phân tích chẩn đoán; mô hình chính phân loại trực tiếp từ văn bản review tự do.",
+         size=12, color=MUTED)
 
 
 def s06_tfidf(prs):
-    s = new_slide(prs, 6, "05 · Đặc trưng", "Trích xuất TF-IDF N-gram (1,2)", 50,
-                  "Sau kiểm tra văn bản trùng, 8.414 review dùng cho mô hình. Chia Stratified 80/20: 6.731 mẫu Development, "
-                  "1.683 mẫu Final Test khóa. Mọi tuning chỉ trên Development. (~50s)")
-    cfg = [("ngram_range", "(1, 2)", BLUE), ("sublinear_tf", "True", MINT), ("max_features", "5.000", YELLOW)]
-    for i, (k, v, c) in enumerate(cfg):
+    s = new_slide(prs, 6, "05 · Đặc trưng", "Bigram cải thiện Macro F1 thêm 0,0153", 45,
+                  "Cấu hình TF-IDF: Unigram + Bigram giúp tăng Macro F1 từ 55,69% lên 57,22%. "
+                  "Chia tập Stratified 80/20: Development 6.731 mẫu, Final Test khóa 1.683 mẫu. (~45s)")
+    cfg = [("max_features", "5.000", BLUE, "Giới hạn từ vựng để giữ ma trận gọn."),
+           ("sublinear_tf", "True", MINT, "Giảm ảnh hưởng của từ lặp nhiều lần."),
+           ("min_df", "2", YELLOW, "Loại các token chỉ xuất hiện đúng một lần.")]
+    for i, (k, v, c, desc) in enumerate(cfg):
         y = 1.8 + i * 1.25
         card(s, MX, y, 5.2, 1.1, fill=SURF2)
-        text(s, MX + 0.3, y + 0.2, 2.6, 0.35, k, size=14, color=MUTED, font=MONO)
-        text(s, MX + 0.3, y + 0.5, 2.6, 0.5, "cấu hình TF-IDF", size=11, color=MUTED)
-        text(s, MX + 2.7, y + 0.15, 2.3, 0.8, v, size=34, bold=True, color=c, font=MONO, align=PP_ALIGN.RIGHT)
+        text(s, MX + 0.3, y + 0.15, 2.6, 0.35, k, size=14, color=c, font=MONO)
+        text(s, MX + 0.3, y + 0.5, 2.6, 0.5, desc, size=11, color=MUTED)
+        text(s, MX + 2.7, y + 0.15, 2.3, 0.8, v, size=32, bold=True, color=c, font=MONO, align=PP_ALIGN.RIGHT)
     card(s, MX, 5.6, 5.2, 1.15)
     text(s, MX + 0.3, 5.75, 4.6, 0.85,
-         "Unigram + bigram bắt được cụm mang sắc thái, ví dụ “không lương”.", size=13, color=MUTED)
+         "Bigram nắm bắt được các cụm phủ định như “không lương” hay “thiếu minh bạch”.", size=13, color=MUTED)
     x = MX + 5.5
     w = CW - 5.5
     card(s, x, 1.8, w, 2.85, fill=SURF)
-    text(s, x + 0.25, 1.95, w - 0.5, 0.3, "SO SÁNH N-GRAM (CV)", size=11, color=BLUE, bold=True, font=MONO)
+    text(s, x + 0.25, 1.95, w - 0.5, 0.3, "SO SÁNH N-GRAM TRÊN CV", size=11, color=BLUE, bold=True, font=MONO)
     picture(s, FIG / "eda_tfidf_ngram_comparison.png", x + 0.2, 2.3, w - 0.4, 2.25)
     card(s, x, 4.85, w, 1.9, fill=SURF2)
     text(s, x + 0.25, 5.0, w - 0.5, 0.3, "CHIA TẬP STRATIFIED 80 / 20", size=11, color=BLUE, bold=True, font=MONO)
@@ -365,14 +390,13 @@ def s06_tfidf(prs):
          align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
     text(s, x + 0.25 + tw * 0.8, 5.45, tw * 0.2, 0.5, "Test 1.683", size=12, bold=True,
          align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-    text(s, x + 0.25, 6.15, tw, 0.45, "Tập test khóa: chỉ dùng đúng một lần để báo cáo cuối.", size=12, color=MUTED)
+    text(s, x + 0.25, 6.15, tw, 0.45, "Tập test khóa: chỉ dùng đúng một lần để đối chiếu đánh giá cuối.", size=12, color=MUTED)
 
 
 def s07_models(prs):
-    s = new_slide(prs, 7, "06 · Mô hình", "5 mô hình ML & SMOTE chống rò rỉ dữ liệu", 55,
+    s = new_slide(prs, 7, "06 · Mô hình", "Năm mô hình dùng cùng một contract TF-IDF", 45,
                   "Năm mô hình: Naive Bayes, Logistic Regression, Linear SVM, Random Forest, Stacking. "
-                  "Mất cân bằng xử lý bằng class_weight hoặc SMOTE. Điểm mấu chốt: SMOTE bọc trong Pipeline, "
-                  "chỉ áp dụng trên fold train của mỗi lần CV nên fold validation không bị rò rỉ. (~55s)")
+                  "SMOTE bọc trong Pipeline, chỉ sinh mẫu trên fold train để chống rò rỉ dữ liệu. (~45s)")
     models = [("MNB", "Multinomial\nNaive Bayes", BLUE), ("LR", "Logistic\nRegression", MINT),
               ("SVM", "Linear\nSVM", YELLOW), ("RF", "Random\nForest", ORANGE), ("STK", "Stacking\nEnsemble", RED)]
     bw, gap = 2.2, 0.283
@@ -382,9 +406,11 @@ def s07_models(prs):
         badge(s, x + 0.2, 1.98, tag, c, 12, w=0.7)
         text(s, x + 0.2, 2.5, bw - 0.4, 0.9, name.split("\n"), size=16, bold=True)
     card(s, MX, 3.85, CW, 2.9)
-    text(s, MX + 0.3, 4.0, 8, 0.3, "SMOTE TRONG PIPELINE  ·  MỖI FOLD CV", size=11, color=BLUE, bold=True, font=MONO)
-    stages = [("Train fold", "4/5 dữ liệu\nDevelopment", BLUE, False), ("SMOTE", "Sinh mẫu thiểu số\nchỉ trên train fold", ORANGE, True),
-              ("Fit model", "Học trên dữ liệu\nđã cân bằng", MINT, False), ("Validate", "1/5 fold còn lại\nNGUYÊN BẢN", YELLOW, False)]
+    text(s, MX + 0.3, 4.0, 8, 0.3, "SMOTE NẰM BÊN TRONG TỪNG FOLD HUẤN LUYỆN", size=11, color=BLUE, bold=True, font=MONO)
+    stages = [("Train fold", "4/5 dữ liệu\nDevelopment", BLUE, False),
+              ("SMOTE", "Chỉ resample\ntrain fold", ORANGE, True),
+              ("Fit model", "Học trên dữ liệu\nđã cân bằng", MINT, False),
+              ("Validate", "Giữ nguyên\nvalidation fold", YELLOW, False)]
     bw2, gap2 = 2.5, 0.63
     for i, (t, d, c, hot) in enumerate(stages):
         x = MX + 0.3 + i * (bw2 + gap2)
@@ -395,10 +421,11 @@ def s07_models(prs):
             arrow(s, x + bw2 + 0.1, 5.3, 0.43, 0.3, c)
 
 
-def s08_leaderboard(prs, cv):
-    s = new_slide(prs, 8, "07 · Kết quả CV", "Bảng xếp hạng trên Development Set", 45,
-                  "Xếp hạng theo Macro F1 của Stratified 5-fold CV. Logistic Regression (C=1.0, SMOTE) cao nhất 0,5727, "
-                  "sát Linear SVM 0,5724 nhưng LR trả xác suất trực tiếp nên được chọn cho demo. Stacking không giúp vì các base learner tương quan lỗi. (~45s)")
+def s08_leaderboard(prs, cv, m):
+    # SỬA TIÊU ĐỀ: Bỏ dấu ; -> dùng gạch ngang –
+    s = new_slide(prs, 8, "07 · Kết quả CV", "Xếp hạng gốc – Logistic Regression cải thiện sau sửa lỗi", 55,
+                  "Biểu đồ thể hiện xếp hạng gốc: LR đạt 0,5727, SVM đạt 0,5724. Khoảng cách top 2 chỉ 0,0003. "
+                  "LR được chọn vì trả xác suất cho demo. Sau khi sửa tiền xử lý, CV riêng tăng lên 0,5815. (~55s)")
     cd = CategoryChartData()
     cd.categories = [r["Model"] for r in cv]
     cd.add_series("CV Macro F1", [round(float(r["CV Macro F1 Mean"]), 4) for r in cv])
@@ -427,37 +454,46 @@ def s08_leaderboard(prs, cv):
     x = MX + 7.9
     w = CW - 7.9
     card(s, x, 1.8, w, 2.4, fill=SURF2, line=blend(BG, MINT, 0.5))
-    text(s, x + 0.25, 1.95, w - 0.5, 0.3, "MÔ HÌNH ĐƯỢC CHỌN", size=11, color=MINT, bold=True, font=MONO)
-    text(s, x + 0.25, 2.3, w - 0.5, 0.5, "Logistic Regression", size=22, bold=True)
-    text(s, x + 0.25, 2.85, w - 0.5, 0.9, "0,5727", size=44, bold=True, color=MINT, font=MONO)
-    text(s, x + 0.25, 3.65, w - 0.5, 0.4, "C = 1.0  ·  SMOTE", size=13, color=MUTED, font=MONO)
+    text(s, x + 0.25, 1.95, w - 0.5, 0.3, "KHOẢNG CÁCH TOP 2", size=11, color=MINT, bold=True, font=MONO)
+    text(s, x + 0.25, 2.3, w - 0.5, 0.5, "0,0003", size=32, bold=True, color=MINT, font=MONO)
+    text(s, x + 0.25, 2.9, w - 0.5, 0.4, "LR 0,5727  vs  SVM 0,5724", size=13, color=MUTED, font=MONO)
+    cv_score = f"{float(m.get('cv_macro_f1', 0.5815)):.4f}".replace(".", ",")
+    text(s, x + 0.25, 3.4, w - 0.5, 0.5, f"CV sau sửa lỗi: {cv_score}", size=14, bold=True, color=TEXT)
+
     card(s, x, 4.4, w, 2.35)
     text(s, x + 0.25, 4.55, w - 0.5, 2.1, [
-        [("Vì sao LR? ", {"bold": True, "color": BLUE})],
-        [("Điểm CV cao nhất, độ lệch nhỏ (±0,011)", {"color": MUTED})],
-        [("predict_proba trực tiếp cho demo", {"color": MUTED})],
-        [("Random Forest & Stacking không vượt trội trên TF-IDF thưa", {"color": MUTED})],
+        [("Bảng 5 model ban đầu: ", {"bold": True, "color": BLUE}), ("LR và SVM gần tương đương.", {"color": MUTED})],
+        [("Sau sửa tiền xử lý: ", {"bold": True, "color": MINT}), (f"CV riêng tăng lên {cv_score}.", {"color": MUTED})],
+        [("Giữ đúng phạm vi: ", {"bold": True, "color": YELLOW}), ("Chưa xếp hạng lại 4 mô hình còn lại.", {"color": MUTED})],
     ], size=13, spacing=6)
 
 
 def s09_final_test(prs, m, cm, per_class):
-    s = new_slide(prs, 9, "08 · Final Test", "Kết quả độc lập & ma trận nhầm lẫn", 60,
-                  "Chạy đúng một lần trên 1.683 mẫu khóa: Accuracy 73,74%, Macro F1 0,5714 — khớp CV 0,5727 nên không overfit. "
-                  "Nhưng Accuracy cao vì lớp Positive chiếm áp đảo; Macro F1 mới phản ánh thực: Negative F1 chỉ 0,38. Đây là bẫy Accuracy. (~60s)")
-    stats = [("ACCURACY", f"{float(m['accuracy']) * 100:.2f}%", MUTED), ("MACRO F1", f"{float(m['macro_f1']):.4f}", MINT),
-             ("WEIGHTED F1", f"{float(m['weighted_f1']):.4f}", BLUE)]
-    sw = 3.55
+    # SỬA TIÊU ĐỀ: Bỏ dấu ; -> dùng dấu phẩy ', nhưng'
+    s = new_slide(prs, 9, "08 · Final Test", "Bản sửa cải thiện nhẹ, nhưng lớp Negative vẫn khó", 65,
+                  "Trên 1.683 mẫu Final Test cũ: Accuracy 74,33%, Macro F1 0,5764, Weighted F1 0,7540. "
+                  "Sai 432 mẫu (giảm 10 mẫu). Bẫy Accuracy: Positive F1 đạt 0,86 nhưng Negative chỉ đạt 0,39. (~65s)")
+    acc = f"{float(m['accuracy']) * 100:.2f}%".replace(".", ",")
+    mf1 = f"{float(m['macro_f1']):.4f}".replace(".", ",")
+    wf1 = f"{float(m['weighted_f1']):.4f}".replace(".", ",")
+    err = f"{int(m['error_count'])} / {int(m['test_count'])}"
+
+    stats = [("ACCURACY", acc, MUTED), ("MACRO F1", mf1, MINT),
+             ("WEIGHTED F1", wf1, BLUE), ("SAI", err, RED)]
+    sw = (CW - 0.9) / 4
     for i, (k, v, c) in enumerate(stats):
         x = MX + i * (sw + 0.3)
         card(s, x, 1.75, sw, 1.2, fill=SURF2, line=blend(BG, c, 0.4) if c != MUTED else BORDER)
-        text(s, x + 0.25, 1.9, sw - 0.5, 0.3, k, size=11, color=c, bold=True, font=MONO)
-        text(s, x + 0.25, 2.2, sw - 0.5, 0.65, v, size=34, bold=True, color=c if c != MUTED else TEXT, font=MONO)
-    # confusion matrix from CSV (heat-mapped grid)
+        text(s, x + 0.2, 1.9, sw - 0.4, 0.3, k, size=11, color=c, bold=True, font=MONO)
+        text(s, x + 0.2, 2.2, sw - 0.4, 0.65, v, size=28, bold=True, color=c if c != MUTED else TEXT, font=MONO)
+
+    # Confusion matrix
     labels = ["Negative", "Neutral", "Positive"]
     grid = [[int(r[l]) for l in labels] for r in cm]
     cx, cy, cs = MX + 0.9, 3.85, 1.0
     card(s, MX, 3.2, 5.6, 3.55)
-    text(s, MX + 0.25, 3.3, 5, 0.3, "CONFUSION MATRIX  ·  n = 1.683", size=11, color=BLUE, bold=True, font=MONO)
+    text(s, MX + 0.25, 3.3, 5, 0.3, f"CONFUSION MATRIX  ·  n = {int(m['test_count']):,}".replace(",", "."),
+         size=11, color=BLUE, bold=True, font=MONO)
     for j, l in enumerate(labels):
         text(s, cx + 0.7 + j * (cs + 0.08), cy - 0.02, cs, 0.25, l[:3].upper(), size=10, color=MUTED, font=MONO,
              align=PP_ALIGN.CENTER)
@@ -474,45 +510,46 @@ def s09_final_test(prs, m, cm, per_class):
             text(s, x, y, cs, cs * 0.72, [[(f"{v}", {"bold": True, "size": 16})], [(f"{frac * 100:.0f}%", {"size": 10, "color": TEXT})]],
                  align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
     text(s, cx + 0.7, cy + 2.62, 3.3, 0.25, "Hàng = thực tế · Cột = dự đoán", size=10, color=MUTED, align=PP_ALIGN.CENTER)
-    # per class + trap callout
+
+    # per class
     x = MX + 5.9
     w = CW - 5.9
     card(s, x, 3.2, w, 1.85)
-    text(s, x + 0.25, 3.3, w - 0.5, 0.3, "F1 THEO LỚP", size=11, color=BLUE, bold=True, font=MONO)
+    text(s, x + 0.25, 3.3, w - 0.5, 0.3, "F1 THEO LỚP (%)", size=11, color=BLUE, bold=True, font=MONO)
     colors = {"Negative": RED, "Neutral": YELLOW, "Positive": MINT}
     for i, r in enumerate(per_class):
         y = 3.7 + i * 0.44
         text(s, x + 0.25, y, 1.2, 0.3, r["Label"], size=13, anchor=MSO_ANCHOR.MIDDLE)
         card(s, x + 1.5, y + 0.06, w - 2.7, 0.2, fill=SURF2, line=None, radius=0.5)
         card(s, x + 1.5, y + 0.06, max(0.1, (w - 2.7) * float(r["F1"])), 0.2, fill=colors[r["Label"]], line=None, radius=0.5)
-        text(s, x + w - 1.0, y, 0.8, 0.3, f"{float(r['F1']):.2f}", size=13, bold=True, font=MONO,
+        text(s, x + w - 1.0, y, 0.8, 0.3, f"{float(r['F1']) * 100:.1f}%".replace(".", ","), size=13, bold=True, font=MONO,
              color=colors[r["Label"]], align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE)
     card(s, x, 5.25, w, 1.5, fill=blend(SURF, ORANGE, 0.1), line=blend(BG, ORANGE, 0.5))
-    text(s, x + 0.25, 5.38, w - 0.5, 0.3, "BẪY ACCURACY", size=11, color=ORANGE, bold=True, font=MONO)
+    text(s, x + 0.25, 5.38, w - 0.5, 0.3, "ĐỐI CHIẾU TRUNG THỰC", size=11, color=ORANGE, bold=True, font=MONO)
     text(s, x + 0.25, 5.72, w - 0.5, 0.95,
-         "Đoán toàn “Positive” đã đạt ~74% Accuracy. Chỉ Macro F1 (0,57) lộ ra Negative/Neutral còn yếu.",
+         "Final Test cũ được dùng lại để đối chiếu bản sửa, không phải tập kiểm thử độc lập mới.",
          size=13)
 
 
 def s10_errors(prs, m):
-    s = new_slide(prs, 10, "09 · Error Analysis", "Vì sao mô hình sai? 3 nhóm nguyên nhân", 50,
-                  "442 trên 1.683 mẫu sai (26,3%). Phân tích thủ công 15 ca gồm 10 review có cảm xúc lẫn lộn, "
-                  "4 ca nhãn nhiễu theo rating và 1 review dài có nhiều khía cạnh. (~50s)")
+    s = new_slide(prs, 10, "09 · Error Analysis", "15 lỗi minh họa cho thấy ba dạng khó thường gặp", 50,
+                  "432 trên 1.683 mẫu sai (25,7%). Phân tích 15 ca lỗi minh họa: 7 ca review nhiều vế, "
+                  "6 ca cấu trúc phủ định phức tạp, 2 ca nhãn theo rating chưa rõ ràng. (~50s)")
     err, tot = int(m["error_count"]), int(m["test_count"])
     card(s, MX, 1.8, 3.2, 4.95, fill=SURF2, line=blend(BG, RED, 0.4))
-    text(s, MX + 0.3, 2.05, 2.6, 0.3, "SAI TRÊN FINAL TEST", size=11, color=RED, bold=True, font=MONO)
+    text(s, MX + 0.3, 2.05, 2.6, 0.3, "DỰ ĐOÁN SAI", size=11, color=RED, bold=True, font=MONO)
     text(s, MX + 0.3, 2.45, 2.7, 1.0, str(err), size=60, bold=True, color=RED, font=MONO)
     text(s, MX + 0.3, 3.55, 2.6, 0.5, f"trên {tot:,} mẫu".replace(",", "."), size=15, color=MUTED)
-    text(s, MX + 0.3, 4.2, 2.6, 0.8, f"{err / tot * 100:.1f}% tỉ lệ lỗi", size=22, bold=True)
-    text(s, MX + 0.3, 5.1, 2.6, 1.4, "Phần lớn lỗi liên quan Neutral và Positive, không phải đảo cực Positive và Negative.",
+    text(s, MX + 0.3, 4.2, 2.6, 0.8, f"{err / tot * 100:.1f}% của Final Test".replace(".", ","), size=20, bold=True)
+    text(s, MX + 0.3, 5.1, 2.6, 1.4, "15 lỗi được nhóm tự động theo dấu hiệu văn bản; không đại diện toàn bộ 432 lỗi.",
          size=12, color=MUTED)
     cards = [
-        ("Cảm xúc lẫn lộn · 10/15", "Ý khen và chê cùng xuất hiện; mô hình khó quy về một nhãn duy nhất.",
+        ("Review nhiều vế ý · 7/15", "Một review vừa khen vừa chê, nên khó gói vào một nhãn duy nhất.",
          "Ví dụ: khen môi trường nhưng phàn nàn về OT, lương hoặc quản lý.", YELLOW),
-        ("Nhãn nhiễu theo sao · 4/15", "Nhãn suy ra từ rating có thể không khớp sắc thái của nội dung review.",
-         "Có review mang giọng tiêu cực nhưng rating vẫn sinh nhãn Positive hoặc Neutral.", ORANGE),
-        ("Review dài, đa khía cạnh · 1/15", "Một nhãn ba lớp không giữ được đầy đủ ý kiến theo từng khía cạnh.",
-         "Review mô tả nhiều trải nghiệm ở các giai đoạn khác nhau của công việc.", BLUE),
+        ("Phủ định hoặc cấu trúc khó · 6/15", "Từ phủ định và câu dài khiến tín hiệu TF-IDF khó diễn giải.",
+         "Từ ngữ đảo ngược ý nghĩa trong ngữ cảnh phức tạp.", ORANGE),
+        ("Nhãn hoặc tín hiệu chưa rõ · 2/15", "Rating và nội dung có thể lệch nhau; một số câu có ít từ model nhận ra.",
+         "Review ngắn hoặc nhãn rating sinh nhãn chưa khớp.", BLUE),
     ]
     x0, w = MX + 3.5, CW - 3.5
     for i, (t, d, ex, c) in enumerate(cards):
@@ -525,9 +562,9 @@ def s10_errors(prs, m):
 
 
 def s11_insight(prs, dist):
-    s = new_slide(prs, 11, "10 · Insight ngành IT", "Cảm xúc theo công ty & từ khóa nổi bật", 55,
-                  "WordCloud cho thấy khen: môi trường, đồng nghiệp, học hỏi; chê: OT, lương, quản lý. "
-                  "So sánh 5 công ty: KMS và VNG có tỉ lệ tích cực cao nhất, Bosch thấp nhất với 15% tiêu cực. (~55s)")
+    s = new_slide(prs, 11, "10 · Insight doanh nghiệp", "Salary & benefits thấp nhất ở 4/5 công ty", 50,
+                  "Salary & benefits thấp nhất ở 4/5 công ty (FPT, NashTech, Bosch, KMS). Riêng VNG thấp nhất ở Management. "
+                  "Lưu ý cỡ mẫu khác nhau giữa các công ty; đây là phân tích mô tả, không xếp hạng. (~50s)")
     order = ["KMS Technology", "VNG Corporation", "NashTech", "FPT Software",
              "Bosch Global Software Technologies Company Limited"]
     short = {"KMS Technology": "KMS", "VNG Corporation": "VNG", "NashTech": "NashTech", "FPT Software": "FPT",
@@ -566,48 +603,23 @@ def s11_insight(prs, dist):
         picture(s, FIG / fn, cx + 0.15, 2.3, hw - 0.3, 2.3)
     card(s, x, 4.9, w, 1.85, fill=SURF2)
     text(s, x + 0.25, 5.05, w - 0.5, 1.6, [
-        [("Khen: ", {"bold": True, "color": MINT}), ("môi trường, đồng nghiệp, học hỏi", {"color": MUTED})],
-        [("Chê: ", {"bold": True, "color": RED}), ("OT, lương, quản lý, thưởng", {"color": MUTED})],
-        [("Bosch ", {"bold": True, "color": ORANGE}), ("có 15% tiêu cực — cao nhất trong 5 công ty", {"color": MUTED})],
+        [("FPT, NashTech, Bosch, KMS: ", {"bold": True, "color": MINT}), ("Salary & benefits thấp nhất.", {"color": MUTED})],
+        [("VNG: ", {"bold": True, "color": YELLOW}), ("Management cares about me thấp nhất.", {"color": MUTED})],
+        [("Cỡ mẫu khác nhau: ", {"bold": True, "color": ORANGE}), ("FPT có 2.014 review, KMS 251 và VNG 259.", {"color": MUTED})],
     ], size=13, spacing=8)
 
 
-def s12_demo(prs):
-    s = new_slide(prs, 15, "14 · Live demo", "Live demo hệ thống phân tích cảm xúc", 55,
-                  "Bạn Nguyễn Duy Khang dẫn dắt ngắn, sau đó chuyển sang ứng dụng Streamlit để thao tác trực tiếp. "
-                  "Slide này không hiển thị trước kết quả demo. (~55s, gồm 15s dẫn dắt và 40s thao tác)")
-    card(s, MX, 1.8, 5.0, 4.95, fill=SURF2, line=blend(BG, MINT, 0.4))
-    text(s, MX + 0.35, 2.05, 4.3, 0.3, "NGƯỜI TRÌNH BÀY", size=11, color=BLUE, bold=True, font=MONO)
-    text(s, MX + 0.35, 2.55, 4.3, 0.7, "NGUYỄN DUY KHANG", size=30, color=MINT, bold=True)
-    text(s, MX + 0.35, 3.55, 4.3, 1.3,
-         "Minh họa cách một review mới đi qua pipeline đã huấn luyện", size=20, color=MUTED)
-    text(s, MX + 0.35, 5.65, 4.3, 0.65, "Sau trang này, nhóm chuyển sang ứng dụng Streamlit.", size=14, color=MINT)
-
-    steps = [
-        ("01", "Nhập review mới", "Dùng một câu tiếng Việt chưa có trong dữ liệu huấn luyện", BLUE),
-        ("02", "Quan sát dự đoán", "Đọc nhãn cảm xúc và xác suất của ba lớp", MINT),
-        ("03", "Kiểm tra đầu vào", "Xem văn bản đã xử lý và các token TF-IDF nổi bật", YELLOW),
-    ]
-    x = MX + 5.4
-    for i, (n, title, body, color) in enumerate(steps):
-        y = 1.8 + i * 1.55
-        card(s, x, y, CW - 5.4, 1.28, fill=SURF)
-        badge(s, x + 0.25, y + 0.25, n, color, 12, w=0.62)
-        text(s, x + 1.05, y + 0.16, CW - 6.8, 0.4, title, size=18, bold=True)
-        text(s, x + 1.05, y + 0.58, CW - 6.8, 0.5, body, size=13, color=MUTED)
-
-
 def s13_features(prs):
-    s = new_slide(prs, 12, "11 · Explainability", "Các token TF-IDF nổi bật trong ví dụ", 65,
-                  "Với câu demo, mô hình dự đoán Negative 84,3%. Các token có trọng số TF-IDF lớn nhất là “xuyên”, “lý”, "
-                  "“không lương”, “lương” và “không”. Trọng số này thể hiện mức nổi bật trong câu, không phải chiều tác động lên nhãn. (~65s)")
+    s = new_slide(prs, 12, "11 · Diễn giải", "TF-IDF cho biết độ nổi bật, không cho biết chiều tác động", 45,
+                  "Với câu demo, mô hình dự đoán Negative 99,0%. “không lương” và “lương thấp” được giữ lại "
+                  "dưới dạng đặc trưng riêng. Trọng số TF-IDF cho biết độ nổi bật, không cho biết chiều tác động. (~45s)")
     tokens = [("xuyên", 0.615), ("lý", 0.606), ("không lương", 0.384),
               ("lương", 0.296), ("không", 0.138)]
     cd = CategoryChartData()
     cd.categories = [t for t, _ in tokens]
     cd.add_series("TF-IDF", [v for _, v in tokens])
     card(s, MX, 1.8, 7.4, 4.95, fill=SURF)
-    text(s, MX + 0.25, 1.95, 6.9, 0.3, "TOP TOKEN TF-IDF TRONG CÂU", size=11, color=BLUE, bold=True, font=MONO)
+    text(s, MX + 0.25, 1.95, 6.9, 0.3, "TRỌNG SỐ TF-IDF (×100)", size=11, color=BLUE, bold=True, font=MONO)
     gf = s.shapes.add_chart(XL_CHART_TYPE.BAR_CLUSTERED, Inches(MX + 0.15), Inches(2.3), Inches(7.1), Inches(4.35), cd)
     ch = gf.chart
     style_chart(ch)
@@ -631,7 +643,7 @@ def s13_features(prs):
     w = CW - 7.7
     card(s, x, 1.8, w, 2.75, fill=SURF2, line=blend(BG, RED, 0.4))
     text(s, x + 0.25, 1.95, w - 0.5, 0.3, "XÁC SUẤT DỰ ĐOÁN", size=11, color=RED, bold=True, font=MONO)
-    for i, (lab, p, c) in enumerate([("Negative", 84.3, RED), ("Neutral", 15.0, YELLOW), ("Positive", 0.7, MINT)]):
+    for i, (lab, p, c) in enumerate([("Negative", 99.0, RED), ("Neutral", 0.9, YELLOW), ("Positive", 0.1, MINT)]):
         y = 2.4 + i * 0.7
         text(s, x + 0.25, y, 1.1, 0.35, lab, size=13, anchor=MSO_ANCHOR.MIDDLE)
         card(s, x + 1.4, y + 0.08, w - 2.7, 0.2, fill=SURF, line=None, radius=0.5)
@@ -640,22 +652,23 @@ def s13_features(prs):
              align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE)
     card(s, x, 4.75, w, 2.0)
     text(s, x + 0.25, 4.9, w - 0.5, 1.8, [
-        [("Bigram có mặt: ", {"bold": True, "color": BLUE}), ("“không lương” được xem như một đặc trưng riêng.", {"color": MUTED})],
-        [("Lưu ý: ", {"bold": True, "color": MINT}), ("trọng số TF-IDF không thể hiện chiều tác động lên nhãn.", {"color": MUTED})],
+        [("Cụm từ được giữ lại: ", {"bold": True, "color": BLUE}), ("“không lương” và “lương thấp” là các đặc trưng riêng.", {"color": MUTED})],
+        [("Giới hạn diễn giải: ", {"bold": True, "color": MINT}), ("Trọng số TF-IDF cho biết độ nổi bật, không cho biết chiều tác động.", {"color": MUTED})],
     ], size=13, spacing=8)
 
 
 def s14_lessons(prs):
-    s = new_slide(prs, 13, "12 · Tổng kết", "Thành tựu, bài học & hạn chế", 55,
-                  "Thành tựu: pipeline hoàn chỉnh, đánh giá không rò rỉ, app chạy được. Bài học: với dữ liệu lệch phải dùng Macro F1, "
-                  "SMOTE đặt trong Pipeline, khóa tập test. Hạn chế: nhãn nhiễu theo sao, Neutral khó, chưa hiểu ngữ cảnh sâu. (~55s)")
+    s = new_slide(prs, 13, "12 · Đánh giá", "Bản sửa tốt hơn một chút, nhưng lớp Negative vẫn khó", 50,
+                  "Tóm tắt: Đã hoàn thành pipeline text-only, 5-fold CV, đối chiếu Final Test cũ. "
+                  "Bài học: Macro F1 quan trọng hơn Accuracy, SMOTE phải nằm trong từng fold. "
+                  "Hạn chế: Weak label có nhiễu, Negative F1 chỉ 0,3910. Chênh CV–Test 0,0052, chưa thấy lệch lớn. (~50s)")
     cols = [
-        ("THÀNH TỰU", MINT, ["Pipeline end-to-end trên 8.417 review", "5 mô hình, chọn bằng CV Macro F1",
-                             "Final Test độc lập 1.683 mẫu", "Web demo Streamlit 5 phân hệ"]),
-        ("BÀI HỌC", BLUE, ["Accuracy đánh lừa khi lệch 11:1 → dùng Macro F1", "SMOTE phải nằm trong Pipeline theo fold",
-                           "Mô hình đơn giản (LR) thắng RF/Stacking trên TF-IDF", "Khóa tập test, chỉ dùng một lần"]),
-        ("HẠN CHẾ", ORANGE, ["Nhãn suy ra từ sao → nhiễu", "Neutral & Negative F1 còn thấp (0,48 / 0,38)",
-                             "Review nhiều vế dễ bị dự đoán lệch", "TF-IDF chưa nắm ngữ cảnh sâu"]),
+        ("ĐÃ HOÀN THÀNH", MINT, ["Pipeline text-only end-to-end", "Chọn model bằng 5-fold CV",
+                                 "Đối chiếu lại Final Test cũ", "Web demo Streamlit"]),
+        ("BÀI HỌC", BLUE, ["Macro F1 quan trọng hơn Accuracy", "SMOTE phải nằm trong từng fold",
+                           "LR và SVM phù hợp dữ liệu thưa", "Khóa tập test, chỉ dùng một lần"]),
+        ("HẠN CHẾ", ORANGE, ["Rating tạo weak label có nhiễu", "Negative F1 chỉ đạt 0,3910",
+                             "TF-IDF chưa hiểu ngữ cảnh dài", "Review nhiều vế dễ lệch nhãn"]),
     ]
     cw = (CW - 0.6) / 3
     for i, (t, c, items) in enumerate(cols):
@@ -667,59 +680,183 @@ def s14_lessons(prs):
 
 
 def s15_closing(prs):
-    s = new_slide(prs, 14, "13 · Kết luận", "Kết luận & hướng phát triển", 35,
-                  "Tóm tắt: đã xây dựng hệ thống phân tích cảm xúc ITviec hoàn chỉnh. Hướng mở rộng: ABSA phân tích theo khía cạnh, "
-                  "LLM/transformer tiếng Việt. Cảm ơn GVHD và Hội đồng; mời Q&A / live demo. (~35s)")
+    s = new_slide(prs, 14, "13 · Kết luận", "Đóng góp của đồ án và bước phát triển tiếp theo", 35,
+                  "Kết luận: Đóng góp pipeline ba lớp có thể tái lập, đánh giá đúng quy trình, ứng dụng minh họa. "
+                  "Hướng phát triển: Gán nhãn thủ công tập chuẩn, ABSA khía cạnh, Transformer tiếng Việt. "
+                  "Kết thúc nội dung chính. Tiếp theo: live demo. (~35s)")
     card(s, MX, 1.8, 6.0, 4.95, fill=SURF2)
-    text(s, MX + 0.3, 2.0, 5.4, 0.3, "ĐÓNG GÓP CHÍNH", size=11, color=MINT, bold=True, font=MONO)
+    text(s, MX + 0.3, 2.0, 5.4, 0.3, "ĐÓNG GÓP", size=11, color=MINT, bold=True, font=MONO)
     text(s, MX + 0.3, 2.45, 5.4, 4.0, [
-        [("▸ ", {"color": MINT, "bold": True}), ("Hệ thống 3 lớp cảm xúc end-to-end", {})],
-        [("▸ ", {"color": MINT, "bold": True}), ("Logistic Regression + SMOTE: Macro F1 0,5714", {})],
-        [("▸ ", {"color": MINT, "bold": True}), ("Insight văn hóa làm việc 5 công ty IT", {})],
-        [("▸ ", {"color": MINT, "bold": True}), ("Web demo dự đoán real-time", {})],
-    ], size=16, spacing=14)
+        [("▸ ", {"color": MINT, "bold": True}), ("Pipeline ba lớp có thể tái lập", {"bold": True})],
+        [("  Từ dữ liệu, preprocessing, TF-IDF đến đánh giá.", {"color": MUTED})],
+        [("▸ ", {"color": MINT, "bold": True}), ("Đánh giá đúng quy trình", {"bold": True})],
+        [("  Chọn bản sửa bằng CV; đối chiếu trên Final Test cũ.", {"color": MUTED})],
+        [("▸ ", {"color": MINT, "bold": True}), ("Ứng dụng minh họa", {"bold": True})],
+        [("  Insight mô tả và dự đoán review theo thời gian thực.", {"color": MUTED})],
+    ], size=15, spacing=8)
     x = MX + 6.3
     w = CW - 6.3
     card(s, x, 1.8, w, 2.35)
     text(s, x + 0.3, 2.0, w - 0.6, 0.3, "HƯỚNG PHÁT TRIỂN", size=11, color=BLUE, bold=True, font=MONO)
-    for i, (t, d, c) in enumerate([("ABSA", "Cảm xúc theo từng khía cạnh: lương, OT, quản lý", BLUE),
-                                   ("LLM / PhoBERT", "Hiểu ngữ cảnh, xử lý review nhiều vế", YELLOW)]):
-        y = 2.5 + i * 0.78
-        badge(s, x + 0.3, y + 0.05, t, c, 11, w=1.7)
-        text(s, x + 2.2, y + 0.06, w - 2.5, 0.6, d, size=13, color=MUTED, anchor=MSO_ANCHOR.TOP)
+    for i, (t, d, c) in enumerate([("Gán nhãn thủ công", "Tạo tập chuẩn nhỏ để đo mức nhiễu của weak label.", BLUE),
+                                   ("ABSA", "Phân tích riêng lương, OT, quản lý và môi trường.", YELLOW),
+                                   ("Transformer tiếng Việt", "Đối sánh với PhoBERT hoặc ViSoBERT khi có tài nguyên.", MINT)]):
+        y = 2.4 + i * 0.55
+        badge(s, x + 0.3, y, t, c, 10, w=1.7)
+        text(s, x + 2.1, y + 0.02, w - 2.4, 0.5, d, size=12, color=MUTED, anchor=MSO_ANCHOR.TOP)
+
     card(s, x, 4.35, w, 2.4, fill=blend(SURF, MINT, 0.08), line=blend(BG, MINT, 0.5))
-    text(s, x + 0.3, 4.6, w - 0.6, 0.9, "Xin cảm ơn!", size=40, bold=True, color=MINT)
-    text(s, x + 0.3, 5.5, w - 0.6, 1.1,
-         ["Cảm ơn GVHD và Hội đồng đã lắng nghe.", "Sẵn sàng Q&A và Live Demo."], size=15, color=TEXT, spacing=4)
+    text(s, x + 0.3, 4.6, w - 0.6, 0.35, "CHUYỂN TIẾP TRÌNH BÀY", size=11, color=BLUE, bold=True, font=MONO)
+    # Câu chuyển tiếp Slide 14 chuẩn xác
+    text(s, x + 0.3, 5.0, w - 0.6, 0.8, "Kết thúc nội dung chính. Tiếp theo: live demo.", size=20, bold=True, color=MINT)
+    text(s, x + 0.3, 5.85, w - 0.6, 0.7,
+         ["Nhóm xin mời bạn Nguyễn Duy Khang trình bày phần live demo.", "Phiên hỏi đáp (Q&A) sẽ bắt đầu sau phần thao tác."],
+         size=13, color=MUTED, spacing=3)
 
 
-# --------------------------------------------------------------------------- main
-def build(out: Path):
-    m, cv, cm, per_class, dist = load_metrics()
-    prs = Presentation()
-    prs.slide_width, prs.slide_height = Inches(W), Inches(H)
-    s01_cover(prs)
-    s02_problem(prs)
-    s03_pipeline(prs)
-    s04_preprocessing(prs)
-    s05_eda(prs)
-    s06_tfidf(prs)
-    s07_models(prs)
-    s08_leaderboard(prs, cv)
-    s09_final_test(prs, m, cm, per_class)
-    s10_errors(prs, m)
-    s11_insight(prs, dist)
-    s13_features(prs)
-    s14_lessons(prs)
-    s15_closing(prs)
-    s12_demo(prs)
-    assert len(prs.slides) == TOTAL
+def s12_demo(prs):
+    s = new_slide(prs, 15, "14 · Live demo", "Live demo hệ thống phân tích cảm xúc", 55,
+                  "Bạn Nguyễn Duy Khang dẫn dắt ngắn, sau đó chuyển sang ứng dụng Streamlit để thao tác trực tiếp: "
+                  "1. Chọn review mẫu, 2. Quan sát dự đoán, 3. Kiểm tra đầu vào. (~55s)")
+    card(s, MX, 1.8, 5.0, 4.95, fill=SURF2, line=blend(BG, MINT, 0.4))
+    text(s, MX + 0.35, 2.05, 4.3, 0.3, "NGƯỜI TRÌNH BÀY", size=11, color=BLUE, bold=True, font=MONO)
+    text(s, MX + 0.35, 2.55, 4.3, 0.7, "NGUYỄN DUY KHANG", size=30, color=MINT, bold=True)
+    text(s, MX + 0.35, 3.55, 4.3, 1.3,
+         "Minh họa cách một review mới đi qua pipeline đã huấn luyện", size=20, color=MUTED)
+    # Câu chuyển tiếp Slide 15 chuẩn xác
+    text(s, MX + 0.35, 5.65, 4.3, 0.65, "Sau trang này, nhóm chuyển sang ứng dụng Streamlit để thao tác trực tiếp.", size=14, color=MINT)
+
+    steps = [
+        ("01", "Chọn review mẫu", "Bấm mẫu “Nhiều vế” có sẵn trong ứng dụng", BLUE),
+        ("02", "Quan sát dự đoán", "Đọc nhãn cảm xúc và xác suất của ba lớp", MINT),
+        ("03", "Kiểm tra đầu vào", "Xem văn bản sau tiền xử lý và các token TF-IDF nổi bật", YELLOW),
+    ]
+    x = MX + 5.4
+    for i, (n, title, body, color) in enumerate(steps):
+        y = 1.8 + i * 1.55
+        card(s, x, y, CW - 5.4, 1.28, fill=SURF)
+        badge(s, x + 0.25, y + 0.25, n, color, 12, w=0.62)
+        text(s, x + 1.05, y + 0.16, CW - 6.8, 0.4, title, size=18, bold=True)
+        text(s, x + 1.05, y + 0.58, CW - 6.8, 0.5, body, size=13, color=MUTED)
+
+
+# --------------------------------------------------------------------------- Sync master presentation
+def sync_existing_presentation(prs: Presentation) -> int:
+    """Scan existing presentation shapes, fix semicolons in titles, ensure transitions."""
+    mod_count = 0
+    # Slide 8 is index 7
+    if len(prs.slides) >= 8:
+        s8 = prs.slides[7]
+        for sp in s8.shapes:
+            if sp.has_text_frame and "Xếp hạng gốc" in sp.text_frame.text:
+                for p in sp.text_frame.paragraphs:
+                    for r in p.runs:
+                        if "Xếp hạng gốc;" in r.text:
+                            r.text = r.text.replace("Xếp hạng gốc;", "Xếp hạng gốc –")
+                            mod_count += 1
+                        elif "Xếp hạng gốc ;" in r.text:
+                            r.text = r.text.replace("Xếp hạng gốc ;", "Xếp hạng gốc –")
+                            mod_count += 1
+
+    # Slide 9 is index 8
+    if len(prs.slides) >= 9:
+        s9 = prs.slides[8]
+        for sp in s9.shapes:
+            if sp.has_text_frame and "Bản sửa cải thiện nhẹ" in sp.text_frame.text:
+                for p in sp.text_frame.paragraphs:
+                    for r in p.runs:
+                        if "Bản sửa cải thiện nhẹ;" in r.text:
+                            r.text = r.text.replace("Bản sửa cải thiện nhẹ;", "Bản sửa cải thiện nhẹ, nhưng")
+                            mod_count += 1
+                        elif "Bản sửa cải thiện nhẹ ;" in r.text:
+                            r.text = r.text.replace("Bản sửa cải thiện nhẹ ;", "Bản sửa cải thiện nhẹ, nhưng")
+                            mod_count += 1
+
+    # Slide 14 transition
+    if len(prs.slides) >= 14:
+        s14 = prs.slides[13]
+        for sp in s14.shapes:
+            if sp.has_text_frame and "Kết thúc nội dung chính" in sp.text_frame.text:
+                for p in sp.text_frame.paragraphs:
+                    for r in p.runs:
+                        if "Kết thúc nội dung chính" in r.text:
+                            r.text = "Kết thúc nội dung chính. Tiếp theo: live demo."
+
+    # Slide 15 transition
+    if len(prs.slides) >= 15:
+        s15 = prs.slides[14]
+        for sp in s15.shapes:
+            if sp.has_text_frame and "Sau trang này" in sp.text_frame.text:
+                for p in sp.text_frame.paragraphs:
+                    for r in p.runs:
+                        if "Sau trang này" in r.text:
+                            r.text = "Sau trang này, nhóm chuyển sang ứng dụng Streamlit để thao tác trực tiếp."
+
+    return mod_count
+
+
+def save_presentation(prs: Presentation, out: Path) -> Path:
     out.parent.mkdir(parents=True, exist_ok=True)
-    prs.save(out)
-    print(f"Saved {out} ({len(prs.slides)} slides)")
+    try:
+        prs.save(str(out))
+        print(f"[OK] Đã lưu thành công 15 slide vào: {out}")
+        return out
+    except PermissionError:
+        fallback = out.with_name(f"{out.stem}_updated{out.suffix}")
+        prs.save(str(fallback))
+        print("\n" + "=" * 76)
+        print(f"[CẢNH BÁO] File '{out.name}' đang mở trong Microsoft PowerPoint nên bị khóa quyền ghi!")
+        print(f"[THÀNH CÔNG] Đã lưu bản cập nhật chuẩn xác vào: '{fallback}'")
+        print("[HƯỚNG DẪN] Bạn chỉ cần đóng Microsoft PowerPoint, sau đó:")
+        print(f"            - Hoặc chạy lại script: python scripts/build_presentation_slides.py")
+        print(f"            - Hoặc đổi tên file '{fallback.name}' thành '{out.name}'.")
+        print("=" * 76 + "\n")
+        return fallback
+
+
+def build(out: Path, from_scratch: bool = False):
+    m, cv, cm, per_class, dist = load_metrics()
+
+    if not from_scratch and out.exists():
+        print(f"[*] Đồng bộ từ presentation hiện có: {out.name}...")
+        prs = Presentation(str(out))
+        mods = sync_existing_presentation(prs)
+        print(f"[*] Đã kiểm tra và chỉnh sửa {mods} mục tiêu đề / liên kết.")
+    else:
+        print("[*] Tạo presentation mới từ scratch (15 slide chuẩn Retrained v2)...")
+        prs = Presentation()
+        prs.slide_width, prs.slide_height = Inches(W), Inches(H)
+        s01_cover(prs)
+        s02_problem(prs)
+        s03_pipeline(prs, m)
+        s04_preprocessing(prs)
+        s05_eda(prs)
+        s06_tfidf(prs)
+        s07_models(prs)
+        s08_leaderboard(prs, cv, m)
+        s09_final_test(prs, m, cm, per_class)
+        s10_errors(prs, m)
+        s11_insight(prs, dist)
+        s13_features(prs)
+        s14_lessons(prs)
+        s15_closing(prs)
+        s12_demo(prs)
+        assert len(prs.slides) == TOTAL
+
+    saved_path = save_presentation(prs, out)
+    return saved_path
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-o", "--output", type=Path, default=ROOT / "reports" / "slides" / "ITviec_Sentiment_Analysis.pptx")
-    build(ap.parse_args().output)
+    if sys.platform == "win32":
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except AttributeError:
+            pass
+    ap = argparse.ArgumentParser(description="Tạo hoặc cập nhật 15 slide thuyết trình đồ án ITviec.")
+    ap.add_argument("-o", "--output", type=Path, default=ROOT / "reports" / "slides" / "ITviec_Sentiment_Analysis.pptx",
+                    help="Đường dẫn file .pptx đầu ra")
+    ap.add_argument("--scratch", action="store_true",
+                    help="Bắt buộc tạo lại hoàn toàn từ scratch thay vì đồng bộ file có sẵn")
+    args = ap.parse_args()
+    build(args.output, from_scratch=args.scratch)
