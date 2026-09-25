@@ -30,8 +30,7 @@ pages = {
         st.Page("app_pages/insights.py", title="Insight doanh nghiệp", icon=":material/domain:"),
     ],
     "Mô hình": [
-        st.Page("app_pages/benchmark.py", title="Benchmark", icon=":material/leaderboard:"),
-        st.Page("app_pages/evaluation.py", title="Đánh giá & lỗi", icon=":material/analytics:"),
+        st.Page("app_pages/evaluation.py", title="Mô hình & đánh giá", icon=":material/analytics:"),
         st.Page("app_pages/predict.py", title="Phân tích review", icon=":material/psychology:"),
     ],
 }

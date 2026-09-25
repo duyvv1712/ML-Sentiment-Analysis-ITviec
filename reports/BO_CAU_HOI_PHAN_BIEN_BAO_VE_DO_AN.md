@@ -135,12 +135,19 @@
 ---
 
 ### Câu 10: Top 2 chênh nhau chỉ 0,0003, tại sao nhóm chọn Logistic Regression thay vì SVM?
-- **Ý đồ của Thầy:** Kiểm tra tiêu chí kỹ thuật khi ra quyết định kỹ thuật.
-- **Câu trả lời chuẩn:**
-  > *"Dạ thưa Thầy, khoảng cách $0,0003$ là rất nhỏ, về mặt thống kê có thể coi hai mô hình tương đương. Tuy nhiên nhóm chọn Logistic Regression vì **khả năng sinh xác suất tự nhiên (Calibrated Probabilities)**:
-  > - Logistic Regression dùng hàm Sigmoid/Softmax để ánh xạ trực tiếp khoảng cách thành xác suất dự đoán $P(y|x)$ một cách đáng tin cậy.
-  > - Linear SVM chỉ tối ưu khoảng cách hình học tới biên (hinge loss), muốn có xác suất phải bọc thêm kỹ thuật hiệu chuẩn Platt Scaling (rất tốn thời gian tính toán).
-  > - Việc có xác suất trực tiếp giúp phân hệ Demo trên Web hiển thị thanh Confidence Score rõ ràng cho người dùng xem độ tin cậy của từng lớp."*
+- **Ý đồ của Thầy:** Kiểm tra tiêu chí kỹ thuật khi ra quyết định kỹ thuật và xem sinh viên có phân biệt được cơ chế phân loại hình học (SVM) và phân loại xác suất (Logistic Regression) hay không.
+- **Kịch bản trả lời tự nhiên, dễ nhớ (Dành cho Sinh viên Năm 1):**
+  > *"Dạ thưa Thầy/Cô, trong quá trình thử nghiệm, nhóm thấy **SVM chạy cũng rất tốt**, điểm số của SVM và Logistic Regression là **ngang ngửa nhau** (chênh lệch chỉ $0,0003$, về mặt thống kê coi như tương đương).  
+  > 
+  > Tuy nhiên, nhóm quyết định chọn **Logistic Regression** vì một lý do kỹ thuật rất thực tế:  
+  > 1. **Logistic Regression có sẵn xác suất phần trăm:** Mô hình này tính toán trực tiếp ra được xác suất (ví dụ câu này $90\%$ Tích cực, $10\%$ Tiêu cực) nhờ hàm Softmax, giúp nhóm vẽ thanh độ tin cậy trực quan lên Web Demo.  
+  > 2. **Trong khi đó, SVM không tự tính xác suất:** Bản chất của SVM là chỉ phân chia ranh giới dứt khoát (Hard Classifier). Nếu muốn ép SVM tính ra phần trăm, nhóm phải cài thêm các thuật toán phụ (Platt Scaling), làm mô hình chạy nặng và chậm hơn.  
+  > 
+  > Theo nguyên lý Dao cạo Ockham, khi hai mô hình cho kết quả tốt ngang nhau, nhóm ưu tiên chọn **Logistic Regression** vì nó **nhẹ hơn, đơn giản hơn và tối ưu nhất để đưa vào ứng dụng thực tế** ạ!"*
+- **Phiên bản trả lời chuyên sâu (Dành cho phản biện chi tiết về toán/mã nguồn):**
+  > *"Dạ thưa Thầy:  
+  > - **Về hàm mất mát:** Linear SVM tối ưu Hinge Loss nhằm tìm siêu phẳng cực đại hóa Margin, đầu ra là khoảng cách đại số (`decision_function`) chứ không mang bản chất xác suất. Muốn có xác suất cho Web, scikit-learn phải bọc qua `CalibratedClassifierCV` (chạy thêm một vòng Cross-Validation nội bộ để khớp hàm Sigmoid), làm tăng thời gian huấn luyện lên gấp 3–5 lần.  
+  > - **Về Log-Loss:** Logistic Regression trực tiếp mô hình hóa phân phối xác suất hậu nghiệm $P(Y|X)$, do đó xác suất đầu ra là tự nhiên, tin cậy và không tốn thêm chi phí hiệu chuẩn."*
 
 ---
 

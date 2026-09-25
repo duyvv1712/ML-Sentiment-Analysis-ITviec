@@ -160,7 +160,7 @@ Do_An_May_Hoc_Sentiment_Analysis/
 5. **Bước 5 — Evaluation, Insight & Web Demo:**
    - [Notebook 06](notebooks/06_model_evaluation_error_analysis.ipynb) đọc snapshot Final Test đã khóa: Accuracy **73,74%**, Macro F1 **0,5714**, Weighted F1 **0,7489**; có Confusion Matrix và 15 mẫu Error Analysis.
    - [Notebook 05](notebooks/05_company_sentiment_insights.ipynb) phân tích 180 công ty, xuất WordCloud toàn tập và 5 case study có nhiều review nhất.
-   - Web Demo Streamlit tại `app.py`: Overview, Company Insights, Benchmark, Evaluation và Real-time Prediction bằng Logistic Regression + TF-IDF 5.000 chiều.
+   - Web Demo Streamlit tại `app.py`: Tổng quan, Insight doanh nghiệp, Mô hình & đánh giá, và Phân tích review bằng Logistic Regression + TF-IDF 5.000 chiều.
 
 ---
 

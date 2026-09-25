@@ -65,7 +65,7 @@ section_label("Bắt đầu khám phá")
 cards = st.columns(3, gap="medium")
 features = [
     ("feature_insights", ":material/domain:", "Insight doanh nghiệp", "So sánh cảm xúc, điểm khía cạnh và từ khóa của 5 doanh nghiệp.", "app_pages/insights.py", "Khám phá doanh nghiệp"),
-    ("feature_evaluation", ":material/analytics:", "Đánh giá mô hình", "Đọc ma trận nhầm lẫn, metric theo lớp và 15 lỗi đại diện.", "app_pages/evaluation.py", "Xem kết quả đánh giá"),
+    ("feature_evaluation", ":material/analytics:", "Mô hình & đánh giá", "So sánh mô hình, xem ma trận nhầm lẫn và đọc 15 lỗi minh họa.", "app_pages/evaluation.py", "Xem mô hình & đánh giá"),
     ("feature_predict", ":material/psychology:", "Thử một review", "Nhập nội dung mới, xem xác suất và các tín hiệu TF-IDF.", "app_pages/predict.py", "Bắt đầu phân tích"),
 ]
 for column, (key, icon, title, description, page, action) in zip(cards, features):

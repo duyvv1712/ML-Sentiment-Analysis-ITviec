@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from src.app_services import analyze_review, load_json
-from src.app_theme import SENTIMENT_COLORS, page_header, section_label, style_chart
+from src.app_theme import SENTIMENT_COLORS, SENTIMENT_LABELS, page_header, section_label, style_chart
 from src.tv4_analysis import InsufficientSignalError
 
 
@@ -43,6 +43,7 @@ def sync_example_text() -> None:
         st.session_state.ml_prediction = None
         st.session_state.ml_prediction_error = None
         st.session_state.ml_prediction_warning = None
+        st.session_state.ml_pending_example = True
 
 
 section_label("Phòng thử nghiệm")
@@ -63,9 +64,11 @@ with input_col:
             submitted = st.form_submit_button(
                 "Phân tích cảm xúc", icon=":material/auto_awesome:", type="primary", width="stretch",
             )
-        st.caption("Chọn mẫu hoặc nhập câu của bạn. Nhãn dự đoán có thể khác nhãn của tình huống mẫu.")
-        if submitted:
+        st.caption("Chọn mẫu để xem kết quả ngay, hoặc nhập review riêng rồi bấm Phân tích cảm xúc.")
+        auto_submitted = st.session_state.pop("ml_pending_example", False)
+        if submitted or auto_submitted:
             try:
+                review = st.session_state.prediction_text
                 started = time.perf_counter()
                 with st.spinner("Đang phân tích review…", show_time=True):
                     result = analyze_review(review)
@@ -107,7 +110,7 @@ with output_col:
             st.html(
                 f'<div class="ml-result" style="--result-color:{SENTIMENT_COLORS[label]}">'
                 '<div class="ml-result-label">CẢM XÚC DỰ ĐOÁN</div>'
-                f'<div class="ml-result-value">{escape(label)}</div>'
+                f'<div class="ml-result-value">{escape(SENTIMENT_LABELS[label])}</div>'
                 f'<div class="ml-result-sub">Xác suất của lớp được chọn · {confidence:.1%}</div></div>'
             )
             probabilities = pd.DataFrame([

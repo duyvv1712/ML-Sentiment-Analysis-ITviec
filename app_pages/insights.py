@@ -80,7 +80,8 @@ with right:
 st.info(str(company_aspects["recommendation"]), icon=":material/lightbulb:")
 
 section_label("Ngôn ngữ nổi bật")
-sentiment = st.segmented_control("Góc nhìn WordCloud", ["Positive", "Negative"], default="Negative", required=True, key="insights_sentiment")
+sentiment_label = st.segmented_control("Góc nhìn WordCloud", ["Tích cực", "Tiêu cực"], default="Tiêu cực", required=True, key="insights_sentiment_vi")
+sentiment = {"Tích cực": "Positive", "Tiêu cực": "Negative"}[sentiment_label]
 cloud_keywords = company_keywords[company_keywords["sentiment"] == sentiment].sort_values("rank")
 current = cloud_keywords.head(12).copy()
 

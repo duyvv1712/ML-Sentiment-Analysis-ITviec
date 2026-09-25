@@ -9,22 +9,74 @@ from src.app_theme import SENTIMENT_COLORS, page_header, section_label, style_ch
 
 
 page_header(
-    "Final test laboratory",
-    "Đánh giá & phân tích lỗi",
-    "Kết quả bản sửa trên Final Test đã dùng trước đó, cùng các mẫu dự đoán sai để đọc trực tiếp.",
-    [":green-badge[Revised preprocessing]", ":blue-badge[1,683 samples]", ":orange-badge[432 errors]", ":red-badge[Negative recall 45.6%]"],
+    "Model performance",
+    "Mô hình & đánh giá",
+    "Từ so sánh mô hình đến kết quả kiểm thử và những trường hợp dự đoán sai.",
+    [":blue-badge[5-fold CV]", ":green-badge[Logistic Regression]", ":orange-badge[Final Test]"],
 )
 
+ranking = load_csv("reports/evaluation/model_ranking_cv.csv")
 snapshot = load_json("reports/evaluation/retrained_v2/final_test_snapshot.json")
+baseline = load_json("reports/evaluation/final_test_snapshot.json")
 per_class = load_csv("reports/evaluation/retrained_v2/final_test_per_class.csv")
 matrix = load_csv("reports/evaluation/retrained_v2/confusion_matrix.csv").rename(columns={"Unnamed: 0": "Actual"})
 errors = load_csv("reports/evaluation/retrained_v2/error_examples_15.csv")
 metrics = snapshot["metrics"]
+negative = per_class.loc[per_class["Label"] == "Negative"].iloc[0]
 
-section_label("Kết quả trên tập kiểm thử độc lập")
+section_label("01 / So sánh mô hình")
+with st.container(horizontal=True, key="model_summary"):
+    st.metric("Model được chọn", "Logistic Regression", border=True)
+    st.metric("CV Macro F1 · bản sửa", f"{snapshot['cv_macro_f1']:.4f}", border=True)
+    st.metric("Final Macro F1", f"{metrics['macro_f1']:.4f}", border=True)
+
+chart_frame = ranking.sort_values("CV Macro F1 Mean").copy()
+chart_frame["Selected"] = chart_frame["Rank"].eq(1)
+chart_frame["Low"] = chart_frame["CV Macro F1 Mean"] - chart_frame["CV Macro F1 Std"]
+chart_frame["High"] = chart_frame["CV Macro F1 Mean"] + chart_frame["CV Macro F1 Std"]
+ranking_base = alt.Chart(chart_frame).encode(
+    y=alt.Y("Model:N", sort=alt.SortField("CV Macro F1 Mean", order="descending"), title=None, axis=alt.Axis(labelLimit=220)),
+    tooltip=["Rank", "Model", alt.Tooltip("CV Macro F1 Mean:Q", format=".4f"), alt.Tooltip("CV Macro F1 Std:Q", format=".4f"), "Strategy"],
+)
+ranking_points = ranking_base.mark_point(filled=True, size=140).encode(
+    x=alt.X("CV Macro F1 Mean:Q", scale=alt.Scale(domain=[0.51, 0.62], zero=False), title="Macro F1 · trung bình và ±1 độ lệch chuẩn"),
+    color=alt.condition("datum.Selected", alt.value("#50e3a4"), alt.value("#7aa7ff")),
+)
+ranking_intervals = ranking_base.mark_rule(strokeWidth=3, opacity=.55, color="#7aa7ff").encode(x="Low:Q", x2="High:Q")
+ranking_labels = ranking_base.mark_text(align="left", dx=10, color="#dce5f2", font="JetBrains Mono", fontSize=12).encode(
+    x="High:Q", text=alt.Text("CV Macro F1 Mean:Q", format=".4f")
+)
+with st.container(border=True, key="benchmark_chart"):
+    st.subheader("So sánh 5 mô hình ban đầu", icon=":material/leaderboard:")
+    st.caption("Chấm tròn là điểm trung bình; đường ngang thể hiện biến động qua 5 folds. Chênh lệch nhỏ chưa chứng minh ưu thế thống kê.")
+    st.altair_chart(style_chart((ranking_intervals + ranking_points + ranking_labels).properties(height=250)), width="stretch")
+
+with st.expander("Xem bảng kết quả 5 mô hình"):
+    st.dataframe(
+        ranking,
+        column_order=["Rank", "Model", "CV Macro F1 Mean", "CV Macro F1 Std", "Strategy", "Refit Time (s)"],
+        hide_index=True,
+        width="stretch",
+        column_config={
+            "Rank": st.column_config.NumberColumn("#", width="small"),
+            "CV Macro F1 Mean": st.column_config.NumberColumn("Macro F1", format="%.4f"),
+            "CV Macro F1 Std": st.column_config.NumberColumn("Std", format="%.4f"),
+            "Refit Time (s)": st.column_config.NumberColumn("Refit", format="%.3f s"),
+        },
+    )
+    st.caption("Refit Time là một lần fit cấu hình đã chọn trên toàn Development set; không phải tổng thời gian GridSearchCV.")
+
+st.info(
+    f"Biểu đồ là lần so sánh ban đầu (Logistic Regression: {baseline['cv_macro_f1']:.4f}). "
+    f"Sau khi sửa tiền xử lý, model này đạt {snapshot['cv_macro_f1']:.4f} qua 5-fold CV. "
+    "Bốn model còn lại chưa được xếp hạng lại với bộ đặc trưng mới.",
+    icon=":material/info:",
+)
+
+section_label("02 / Chất lượng trên Final Test")
 with st.container(horizontal=True, key="eval_metrics"):
     st.metric("Accuracy", f"{metrics['accuracy']:.2%}", border=True)
-    st.metric("Macro F1", f"{metrics['macro_f1']:.4f}", border=True)
+    st.metric("Recall Tiêu cực", f"{negative['Recall']:.1%}", border=True)
     with st.container(key="kpi_positive"):
         st.metric("Weighted F1", f"{metrics['weighted_f1']:.4f}", border=True)
     with st.container(key="kpi_error"):
@@ -70,10 +122,9 @@ with right:
             .properties(height=72)
         )
         st.altair_chart(style_chart(class_chart), width="stretch")
-        negative = per_class.loc[per_class["Label"] == "Negative"].iloc[0]
         st.warning(f"Negative là lớp khó nhất: Recall {negative['Recall']:.1%}, F1 {negative['F1']:.4f}.", icon=":material/warning:")
 
-section_label("Khám phá 15 lỗi minh họa")
+section_label("03 / Khám phá 15 lỗi minh họa")
 with st.container(border=True, key="error_filters"):
     filters = st.columns([1, 1, 1.35], gap="medium")
     with filters[0]:

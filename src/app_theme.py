@@ -13,6 +13,11 @@ SENTIMENT_COLORS = {
     "Neutral": "#f4d35e",
     "Negative": "#ff6677",
 }
+SENTIMENT_LABELS = {
+    "Positive": "Tích cực",
+    "Neutral": "Trung tính",
+    "Negative": "Tiêu cực",
+}
 
 
 def apply_app_style() -> None:
